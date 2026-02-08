@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: Smart-Healthcare-Appointment-System
+
+  # JPA/Hibernate Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/healthcare_db?createDatabaseIfNotExist=true
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        # Second-level cache
+        cache:
+
+  # MongoDB Configuration
+  mongodb:
+    uri: mongodb://localhost:27017/healthcare_db
