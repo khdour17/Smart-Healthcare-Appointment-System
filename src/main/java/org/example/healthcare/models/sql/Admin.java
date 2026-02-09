@@ -1,11 +1,7 @@
 package org.example.healthcare.models.sql;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -13,39 +9,33 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "admins")
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "doctors")
-@Cacheable
-@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class Doctor {
+@Builder
+public class Admin {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private String specialty; // Cardiologist, Dermatologist, etc.
-
     private String phone;
 
     @Column(nullable = false)
-    @Builder.Default
-    private Boolean isAvailable = true;
+    private String department;
 
     @CreatedDate
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-
 }

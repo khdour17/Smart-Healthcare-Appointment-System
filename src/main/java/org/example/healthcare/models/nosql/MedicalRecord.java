@@ -1,24 +1,25 @@
 package org.example.healthcare.models.nosql;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Document(collection = "medical_records")
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class MedicalRecord {
+
     @Id
     private String id;
 
@@ -34,10 +35,17 @@ public class MedicalRecord {
     @Field("description")
     private String description;
 
-    @Field("prescription_id")
-    private String prescriptionId;  // Links to Prescription (which has doctor info)
+    @Field("prescription_ids")
+    @Builder.Default
+    private List<String> prescriptionIds = new ArrayList<>();
+
+    @Field("lab_reports")
+    @Builder.Default
+    private List<String> labReports = new ArrayList<>();
 
     @CreatedDate
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }

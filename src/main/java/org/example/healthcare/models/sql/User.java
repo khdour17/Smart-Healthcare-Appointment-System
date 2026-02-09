@@ -36,10 +36,12 @@ public class User {
     private Role role; // ADMIN, DOCTOR, PATIENT
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean enabled = true;
 
     @CreatedDate
     private LocalDateTime createdAt;
 
-
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }

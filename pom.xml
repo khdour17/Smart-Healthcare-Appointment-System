@@ -8,7 +8,7 @@
         <version>4.0.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>org.example</groupId>
+    <groupId>org.example.healthcare</groupId>
     <artifactId>Smart-Healthcare-Appointment-System</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>Smart-Healthcare-Appointment-System</name>
@@ -27,8 +27,7 @@
         <url/>
     </scm>
     <properties>
-        <java.version>25</java.version>
-        <kotlin.version>2.2.20</kotlin.version>
+        <java.version>17</java.version>
     </properties>
     <dependencies>
         <dependency>
@@ -45,7 +44,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
         <dependency>
@@ -56,7 +55,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
