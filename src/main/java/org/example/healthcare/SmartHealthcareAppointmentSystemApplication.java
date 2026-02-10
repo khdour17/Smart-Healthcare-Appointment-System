@@ -9,5 +9,4 @@ public class SmartHealthcareAppointmentSystemApplication {
     public static void main(String[] args) {
         SpringApplication.run(SmartHealthcareAppointmentSystemApplication.class, args);
     }
-
 }
