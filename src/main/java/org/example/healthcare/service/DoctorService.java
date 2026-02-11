@@ -29,18 +29,11 @@ public class DoctorService {
     }
 
     public DoctorResponse getDoctorById(Long id) {
-        Doctor doctor = findDoctorOrThrow(id);
-        return doctorMapper.toResponse(doctor);
+        return doctorMapper.toResponse(findDoctorOrThrow(id));
     }
 
     public List<DoctorResponse> getDoctorsBySpecialty(String specialty) {
         return doctorRepository.findBySpecialtyContainingIgnoreCase(specialty).stream()
-                .map(doctorMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<DoctorResponse> getAvailableDoctors() {
-        return doctorRepository.findByIsAvailable(true).stream()
                 .map(doctorMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -50,31 +43,16 @@ public class DoctorService {
     @Transactional
     public DoctorResponse updateDoctor(Long id, DoctorRequest request) {
         Doctor doctor = findDoctorOrThrow(id);
-
         doctor.setName(request.getName());
         doctor.setSpecialty(request.getSpecialty());
-        doctor.setPhone(request.getPhone());
-
-        Doctor updated = doctorRepository.save(doctor);
-        return doctorMapper.toResponse(updated);
-    }
-
-    @Transactional
-    public DoctorResponse toggleAvailability(Long id) {
-        Doctor doctor = findDoctorOrThrow(id);
-
-        doctor.setIsAvailable(!doctor.getIsAvailable());
-
-        Doctor updated = doctorRepository.save(doctor);
-        return doctorMapper.toResponse(updated);
+        return doctorMapper.toResponse(doctorRepository.save(doctor));
     }
 
     // ==================== DELETE ====================
 
     @Transactional
     public void deleteDoctor(Long id) {
-        Doctor doctor = findDoctorOrThrow(id);
-        doctorRepository.delete(doctor);
+        doctorRepository.delete(findDoctorOrThrow(id));
     }
 
     // ==================== HELPER ====================

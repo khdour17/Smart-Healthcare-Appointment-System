@@ -12,8 +12,6 @@ public class DoctorMapper {
                 .id(doctor.getId())
                 .name(doctor.getName())
                 .specialty(doctor.getSpecialty())
-                .phone(doctor.getPhone())
-                .isAvailable(doctor.getIsAvailable())
                 .username(doctor.getUser().getUsername())
                 .email(doctor.getUser().getEmail())
                 .build();

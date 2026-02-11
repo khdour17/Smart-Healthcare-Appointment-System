@@ -11,7 +11,6 @@ public class AdminMapper {
         return AdminResponse.builder()
                 .id(admin.getId())
                 .name(admin.getName())
-                .phone(admin.getPhone())
                 .department(admin.getDepartment())
                 .username(admin.getUser().getUsername())
                 .email(admin.getUser().getEmail())

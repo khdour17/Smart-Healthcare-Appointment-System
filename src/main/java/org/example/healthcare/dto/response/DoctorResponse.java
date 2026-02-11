@@ -14,8 +14,6 @@ public class DoctorResponse {
     private Long id;
     private String name;
     private String specialty;
-    private String phone;
-    private Boolean isAvailable;
     private String username;
     private String email;
 }

@@ -5,7 +5,6 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,8 +25,6 @@ public class Admin {
 
     @Column(nullable = false)
     private String name;
-
-    private String phone;
 
     @Column(nullable = false)
     private String department;

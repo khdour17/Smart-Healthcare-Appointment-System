@@ -28,6 +28,4 @@ public class RegisterDoctorRequest {
 
     @NotBlank(message = "Specialty is required")
     private String specialty;
-
-    private String phone;
 }

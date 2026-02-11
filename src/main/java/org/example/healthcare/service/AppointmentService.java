@@ -35,7 +35,7 @@ public class AppointmentService {
     private final DoctorAvailabilityRepository availabilityRepository;
     private final AppointmentMapper appointmentMapper;
 
-    // ==================== BOOK (Patient) ====================
+    // ==================== BOOK ====================
 
     @Transactional
     public AppointmentResponse bookAppointment(Long patientId, AppointmentRequest request) {
@@ -48,47 +48,45 @@ public class AppointmentService {
         Doctor doctor = doctorRepository.findById(request.getDoctorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.getDoctorId()));
 
-        // 3. Check doctor works on this day
+        // 3. Get availability for this day
         DoctorAvailability availability = availabilityRepository
                 .findByDoctorIdAndDayOfWeek(request.getDoctorId(), request.getAppointmentDate().getDayOfWeek())
                 .orElseThrow(() -> new DoubleBookingException(
                         "Doctor not available on " + request.getAppointmentDate().getDayOfWeek()));
 
-        // 4. Check time is within working hours
+        // 4. Calculate end time from slot duration
+        LocalTime endTime = request.getStartTime().plusMinutes(availability.getSlotDurationMinutes());
+
+        // 5. Validate within working hours
         if (request.getStartTime().isBefore(availability.getStartTime()) ||
-                request.getEndTime().isAfter(availability.getEndTime())) {
+                endTime.isAfter(availability.getEndTime())) {
             throw new DoubleBookingException("Time outside doctor's working hours (" +
                     availability.getStartTime() + " - " + availability.getEndTime() + ")");
         }
 
-        // 5. Check for double booking (HQL overlap query)
+        // 6. Check double booking
         Long overlappingCount = appointmentRepository.countOverlappingAppointments(
-                request.getDoctorId(),
-                request.getAppointmentDate(),
-                request.getStartTime(),
-                request.getEndTime()
-        );
+                request.getDoctorId(), request.getAppointmentDate(), request.getStartTime(), endTime);
 
         if (overlappingCount > 0) {
             throw new DoubleBookingException("Time slot already booked for this doctor");
         }
 
-        // 6. Create appointment
+        // 7. Create appointment
         Appointment appointment = Appointment.builder()
                 .patient(patient)
                 .doctor(doctor)
                 .appointmentDate(request.getAppointmentDate())
                 .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
+                .endTime(endTime)
                 .reason(request.getReason())
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        Appointment saved = appointmentRepository.save(appointment);
-        return appointmentMapper.toResponse(saved);
+        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
-    // ==================== AVAILABLE SLOTS (Patient views) ====================
+    // ==================== AVAILABLE SLOTS ====================
 
     public List<AvailableSlotResponse> getAvailableSlots(Long doctorId, LocalDate date) {
 
@@ -106,15 +104,15 @@ public class AppointmentService {
         // Generate all possible slots and filter out booked ones
         List<AvailableSlotResponse> availableSlots = new ArrayList<>();
         LocalTime current = availability.getStartTime();
+        int duration = availability.getSlotDurationMinutes();
 
-        while (current.plusMinutes(availability.getSlotDurationMinutes()).isBefore(availability.getEndTime())
-                || current.plusMinutes(availability.getSlotDurationMinutes()).equals(availability.getEndTime())) {
+        while (!current.plusMinutes(duration).isAfter(availability.getEndTime())) {
 
-            LocalTime slotEnd = current.plusMinutes(availability.getSlotDurationMinutes());
-
+            LocalTime slotEnd = current.plusMinutes(duration);
             LocalTime slotStart = current;
+
             boolean isBooked = bookedAppointments.stream()
-                    .anyMatch(apt -> isOverlapping(slotStart, slotEnd, apt.getStartTime(), apt.getEndTime()));
+                    .anyMatch(apt -> slotStart.isBefore(apt.getEndTime()) && slotEnd.isAfter(apt.getStartTime()));
 
             if (!isBooked) {
                 availableSlots.add(AvailableSlotResponse.builder()
@@ -132,22 +130,14 @@ public class AppointmentService {
         return availableSlots;
     }
 
-    private boolean isOverlapping(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
-        return start1.isBefore(end2) && end1.isAfter(start2);
-    }
-
     // ==================== CANCEL (Patient) ====================
 
     @Transactional
     public void cancelAppointment(Long appointmentId) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
 
-        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
-            throw new IllegalArgumentException("Appointment is already cancelled");
-        }
-
-        if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
-            throw new IllegalArgumentException("Cannot cancel a completed appointment");
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new IllegalArgumentException("Only scheduled appointments can be cancelled");
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
@@ -160,26 +150,20 @@ public class AppointmentService {
     public AppointmentResponse completeAppointment(Long appointmentId, String notes) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
 
-        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
-            throw new IllegalArgumentException("Cannot complete a cancelled appointment");
-        }
-
-        if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
-            throw new IllegalArgumentException("Appointment is already completed");
+        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new IllegalArgumentException("Only scheduled appointments can be completed");
         }
 
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointment.setNotes(notes);
 
-        Appointment updated = appointmentRepository.save(appointment);
-        return appointmentMapper.toResponse(updated);
+        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
     // ==================== GET ====================
 
     public AppointmentResponse getAppointmentById(Long id) {
-        Appointment appointment = findAppointmentOrThrow(id);
-        return appointmentMapper.toResponse(appointment);
+        return appointmentMapper.toResponse(findAppointmentOrThrow(id));
     }
 
     public List<AppointmentResponse> getPatientAppointments(Long patientId) {

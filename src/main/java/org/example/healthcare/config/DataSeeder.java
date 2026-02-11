@@ -27,22 +27,19 @@ public class DataSeeder implements CommandLineRunner {
         try {
             if (userRepository.findByRole(Role.ADMIN).isEmpty()) {
 
-                User adminUser = User.builder()
+                User savedUser = userRepository.save(User.builder()
                         .username("admin")
                         .email("admin@healthcare.com")
                         .password(passwordEncoder.encode("admin123"))
                         .role(Role.ADMIN)
                         .enabled(true)
-                        .build();
-                User savedUser = userRepository.save(adminUser);
+                        .build());
 
-                Admin admin = Admin.builder()
+                adminRepository.save(Admin.builder()
                         .user(savedUser)
                         .name("System Admin")
-                        .phone("000-0000")
                         .department("IT")
-                        .build();
-                adminRepository.save(admin);
+                        .build());
 
                 log.info("========================================");
                 log.info("Default admin created:");

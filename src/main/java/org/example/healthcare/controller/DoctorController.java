@@ -35,11 +35,6 @@ public class DoctorController {
         return ResponseEntity.ok(doctorService.getDoctorsBySpecialty(specialty));
     }
 
-    @GetMapping("/available")
-    public ResponseEntity<List<DoctorResponse>> getAvailableDoctors() {
-        return ResponseEntity.ok(doctorService.getAvailableDoctors());
-    }
-
     // ==================== UPDATE (Admin only) ====================
 
     @PutMapping("/{id}")
@@ -47,11 +42,6 @@ public class DoctorController {
             @PathVariable Long id,
             @Valid @RequestBody DoctorRequest request) {
         return ResponseEntity.ok(doctorService.updateDoctor(id, request));
-    }
-
-    @PatchMapping("/{id}/toggle-availability")
-    public ResponseEntity<DoctorResponse> toggleAvailability(@PathVariable Long id) {
-        return ResponseEntity.ok(doctorService.toggleAvailability(id));
     }
 
     // ==================== DELETE (Admin only) ====================

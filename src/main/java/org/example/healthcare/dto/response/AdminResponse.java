@@ -13,7 +13,6 @@ public class AdminResponse {
 
     private Long id;
     private String name;
-    private String phone;
     private String department;
     private String username;
     private String email;

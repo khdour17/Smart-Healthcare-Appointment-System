@@ -41,12 +41,8 @@ public class AuthService {
     // ==================== LOGIN ====================
 
     public JwtResponse login(LoginRequest request) {
-
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -69,56 +65,44 @@ public class AuthService {
 
     @Transactional
     public void registerAdmin(RegisterAdminRequest request) {
-
         validateNewUser(request.getUsername(), request.getEmail());
-
         User savedUser = createUser(request.getUsername(), request.getEmail(), request.getPassword(), Role.ADMIN);
 
-        Admin admin = Admin.builder()
+        adminRepository.save(Admin.builder()
                 .user(savedUser)
                 .name(request.getName())
-                .phone(request.getPhone())
                 .department(request.getDepartment())
-                .build();
-        adminRepository.save(admin);
+                .build());
     }
 
     // ==================== REGISTER DOCTOR ====================
 
     @Transactional
     public void registerDoctor(RegisterDoctorRequest request) {
-
         validateNewUser(request.getUsername(), request.getEmail());
-
         User savedUser = createUser(request.getUsername(), request.getEmail(), request.getPassword(), Role.DOCTOR);
 
-        Doctor doctor = Doctor.builder()
+        doctorRepository.save(Doctor.builder()
                 .user(savedUser)
                 .name(request.getName())
                 .specialty(request.getSpecialty())
-                .phone(request.getPhone())
-                .isAvailable(true)
-                .build();
-        doctorRepository.save(doctor);
+                .build());
     }
 
     // ==================== REGISTER PATIENT ====================
 
     @Transactional
     public void registerPatient(RegisterPatientRequest request) {
-
         validateNewUser(request.getUsername(), request.getEmail());
-
         User savedUser = createUser(request.getUsername(), request.getEmail(), request.getPassword(), Role.PATIENT);
 
-        Patient patient = Patient.builder()
+        patientRepository.save(Patient.builder()
                 .user(savedUser)
                 .name(request.getName())
                 .dateOfBirth(request.getDateOfBirth())
                 .phone(request.getPhone())
                 .address(request.getAddress())
-                .build();
-        patientRepository.save(patient);
+                .build());
     }
 
     // ==================== HELPERS ====================
@@ -133,13 +117,12 @@ public class AuthService {
     }
 
     private User createUser(String username, String email, String password, Role role) {
-        User user = User.builder()
+        return userRepository.save(User.builder()
                 .username(username)
                 .email(email)
                 .password(passwordEncoder.encode(password))
                 .role(role)
                 .enabled(true)
-                .build();
-        return userRepository.save(user);
+                .build());
     }
 }

@@ -26,8 +26,6 @@ public class RegisterAdminRequest {
     @NotBlank(message = "Name is required")
     private String name;
 
-    private String phone;
-
     @NotBlank(message = "Department is required")
     private String department;
 }
