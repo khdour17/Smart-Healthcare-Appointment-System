@@ -16,10 +16,10 @@ import java.util.Date;
 @Slf4j
 public class JwtTokenProvider {
 
-    @Value("${spring.jwt.secret}")
+    @Value("${application.security.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${spring.jwt.expiration}")
+    @Value("${application.security.jwt.expiration}")
     private long jwtExpirationMs;
 
     // Generate token from Authentication

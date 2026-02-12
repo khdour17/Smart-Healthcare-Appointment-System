@@ -2,7 +2,7 @@ spring:
   application:
     name: Smart-Healthcare-Appointment-System
 
-  # JPA/Hibernate Configuration
+  # MySQL
   datasource:
     url: jdbc:mysql://localhost:3306/healthcare_db?createDatabaseIfNotExist=true
     username: root
@@ -16,22 +16,38 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
-        # Second-level cache
         cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: jcache
+        javax:
+          cache:
+            provider: org.ehcache.jsr107.EhcacheCachingProvider
+            uri: classpath:ehcache.xml
 
-  # MongoDB Configuration
+  # MongoDB
   mongodb:
     uri: mongodb://localhost:27017/healthcare_db
-    auto-index-creation: true
 
-  jwt:
-    secret: bOfgcMnkKBcVBjb7N7EcekWFdv3AUs3dhlcwxwcu3Ke
-    expiration: 86400000   # 1 day in milliseconds
+  # Spring Cache
+  cache:
+    type: jcache
+    jcache:
+      config: classpath:ehcache.xml
 
-  # Logging
-  logging:
-    level:
-      org.example.healthcare: DEBUG
-      org.hibernate.SQL: DEBUG
+# JWT
+application:
+  security:
+    jwt:
+      secret: WW91clN1cGVyU2VjcmV0S2V5VGhhdElzQXRMZWFzdDI1NkJpdHNMb25nRm9ySFMyNTZBbGdvcml0aG0xMjM0NTY=
+      expiration: 86400000
+
+# Logging
+logging:
+  level:
+    org.example.healthcare: DEBUG
+    org.example.healthcare.aspect: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.cache: DEBUG

@@ -1,5 +1,6 @@
 package org.example.healthcare.service;
 
+import org.example.healthcare.aspect.annotation.LogAppointment;
 import org.example.healthcare.dto.request.AppointmentRequest;
 import org.example.healthcare.dto.response.AppointmentResponse;
 import org.example.healthcare.dto.response.AvailableSlotResponse;
@@ -38,6 +39,7 @@ public class AppointmentService {
     // ==================== BOOK ====================
 
     @Transactional
+    @LogAppointment(action = "BOOK")
     public AppointmentResponse bookAppointment(Long patientId, AppointmentRequest request) {
 
         // 1. Validate patient
@@ -133,6 +135,7 @@ public class AppointmentService {
     // ==================== CANCEL (Patient) ====================
 
     @Transactional
+    @LogAppointment(action = "CANCEL")
     public void cancelAppointment(Long appointmentId) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
 
@@ -147,6 +150,7 @@ public class AppointmentService {
     // ==================== COMPLETE (Doctor) ====================
 
     @Transactional
+    @LogAppointment(action = "COMPLETE")
     public AppointmentResponse completeAppointment(Long appointmentId, String notes) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
 

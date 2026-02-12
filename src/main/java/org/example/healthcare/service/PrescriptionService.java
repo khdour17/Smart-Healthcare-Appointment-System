@@ -1,5 +1,6 @@
 package org.example.healthcare.service;
 
+import org.example.healthcare.aspect.annotation.LogPrescription;
 import org.example.healthcare.dto.request.PrescriptionRequest;
 import org.example.healthcare.dto.response.PrescriptionResponse;
 import org.example.healthcare.exception.ResourceNotFoundException;
@@ -27,6 +28,7 @@ public class PrescriptionService {
     // ==================== CREATE (Doctor) ====================
 
     @Transactional
+    @LogPrescription(action = "CREATE")
     public PrescriptionResponse createPrescription(PrescriptionRequest request) {
 
         Appointment appointment = appointmentRepository.findById(request.getAppointmentId())
@@ -79,6 +81,7 @@ public class PrescriptionService {
     // ==================== UPDATE (Doctor) ====================
 
     @Transactional
+    @LogPrescription(action = "UPDATE")
     public PrescriptionResponse updatePrescription(String id, PrescriptionRequest request) {
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.ehcache.org/v3"
+        xsi:schemaLocation="http://www.ehcache.org/v3
+        http://www.ehcache.org/schema/ehcache-core-3.0.xsd">
+
+    <!--
+        CACHE TEMPLATE: shared defaults for all caches
+        Any cache that "uses-template" inherits these settings
+        but can override them
+    -->
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="minutes">30</ttl>   <!-- Data expires after 30 minutes -->
+        </expiry>
+        <resources>
+            <heap>100</heap>                <!-- Max 100 entries in memory -->
+        </resources>
+    </cache-template>
+
+    <!--
+        HIBERNATE L2 CACHE for Doctor entity
+        Alias MUST match the fully qualified class name
+        Hibernate looks for this exact name
+    -->
+    <cache alias="org.example.healthcare.models.sql.Doctor" uses-template="default">
+        <expiry>
+            <ttl unit="minutes">60</ttl>   <!-- Doctor entities cached for 1 hour -->
+        </expiry>
+        <resources>
+            <heap>200</heap>                <!-- Store up to 200 Doctor entities -->
+        </resources>
+    </cache>
+
+    <!--
+        SPRING CACHE: getDoctorsBySpecialty() results
+        Key = specialty name (e.g., "cardiologist")
+        Value = List<DoctorResponse>
+    -->
+    <cache alias="doctorsBySpecialty" uses-template="default">
+        <resources>
+            <heap>50</heap>                 <!-- Up to 50 different specialty searches -->
+        </resources>
+    </cache>
+
+    <!--
+        SPRING CACHE: getAllDoctors() result
+        Only 1 entry because there's only one "all doctors" list
+    -->
+    <cache alias="allDoctors" uses-template="default">
+        <expiry>
+            <ttl unit="minutes">15</ttl>   <!-- Refresh every 15 min -->
+        </expiry>
+        <resources>
+            <heap>1</heap>                  <!-- Only 1 entry (the full list) -->
+        </resources>
+    </cache>
+
+    <!--
+        SPRING CACHE: getDoctorById() results
+        Key = doctor ID
+        Value = DoctorResponse
+    -->
+    <cache alias="doctorById" uses-template="default">
+        <resources>
+            <heap>200</heap>                <!-- Up to 200 individual doctors -->
+        </resources>
+    </cache>
+
+    <!--
+        HIBERNATE INTERNAL: tracks when entities were last modified
+        Used to know if query cache results are still valid
+        Must NEVER expire (otherwise Hibernate breaks)
+    -->
+    <cache alias="default-update-timestamps-region" uses-template="default">
+        <expiry>
+            <none/>                         <!-- Never expires -->
+        </expiry>
+        <resources>
+            <heap>1000</heap>
+        </resources>
+    </cache>
+
+    <!--
+        HIBERNATE INTERNAL: stores query results
+        When you run the same HQL/JPQL query, Hibernate
+        returns cached results instead of hitting DB
+    -->
+    <cache alias="default-query-results-region" uses-template="default">
+        <resources>
+            <heap>100</heap>
+        </resources>
+    </cache>
+
+</config>
