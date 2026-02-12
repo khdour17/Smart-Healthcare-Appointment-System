@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,24 +25,25 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/auth/login"
-    };
+    // ==================== ROLE CONSTANTS ====================
+    private static final String ADMIN   = "ADMIN";
+    private static final String DOCTOR  = "DOCTOR";
+    private static final String PATIENT = "PATIENT";
 
-    private static final String[] ADMIN_ENDPOINTS = {
-            "/api/auth/register/**",
-            "/api/admin/**"
-    };
+    // ==================== PATH CONSTANTS ====================
+    private static final String AUTH            = "/api/auth";
+    private static final String ADMIN_API       = "/api/admin/**";
+    private static final String DOCTORS_API     = "/api/doctors/**";
+    private static final String PATIENTS_API    = "/api/patients/**";
+    private static final String AVAILABILITY_API = "/api/availability/**";
+    private static final String APPOINTMENTS_API = "/api/appointments/**";
+    private static final String PRESCRIPTIONS_API = "/api/prescriptions/**";
+    private static final String MEDICAL_RECORDS_API = "/api/medical-records/**";
 
-    private static final String[] DOCTOR_ENDPOINTS = {
-            "/api/prescriptions/**",
-            "/api/availability/**"
-    };
-
-    private static final String[] PATIENT_ENDPOINTS = {
-            "/api/appointments/**",
-            "/api/medical-records/**"
-    };
+    // Specific appointment actions (order matters — must match before broad patterns)
+    private static final String APPOINTMENT_COMPLETE = "/api/appointments/*/complete";
+    private static final String APPOINTMENT_CANCEL   = "/api/appointments/*/cancel";
+    private static final String APPOINTMENT_BOOK     = "/api/appointments/patient/**";
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -56,38 +58,53 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
 
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public
-                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        // ── PUBLIC ──────────────────────────────────────────
+                        .requestMatchers(AUTH + "/login").permitAll()
 
-                        // Admin only
-                        .requestMatchers(ADMIN_ENDPOINTS).hasAuthority("ADMIN")
+                        // ── ADMIN ONLY ─────────────────────────────────────
+                        .requestMatchers(AUTH + "/register/**").hasAuthority(ADMIN)
+                        .requestMatchers(ADMIN_API).hasAuthority(ADMIN)
 
-                        // Doctors: everyone can view, only admin can create/update/delete
-                        .requestMatchers(HttpMethod.GET, "/api/doctors/**").hasAnyAuthority("ADMIN", "PATIENT", "DOCTOR")
-                        .requestMatchers("/api/doctors/**").hasAuthority("ADMIN")
+                        // ── DOCTORS: view = all, modify = admin ────────────
+                        .requestMatchers(HttpMethod.GET, DOCTORS_API).authenticated()
+                        .requestMatchers(HttpMethod.PUT, DOCTORS_API).hasAuthority(ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, DOCTORS_API).hasAuthority(ADMIN)
 
-                        // Patients: admin full control, patient can update own
-                        .requestMatchers(HttpMethod.PUT, "/api/patients/**").hasAnyAuthority("ADMIN", "PATIENT")
-                        .requestMatchers("/api/patients/**").hasAuthority("ADMIN")
+                        // ── PATIENTS: view = admin+doctor, update = admin+patient, delete = admin
+                        .requestMatchers(HttpMethod.GET, PATIENTS_API).hasAnyAuthority(ADMIN, DOCTOR)
+                        .requestMatchers(HttpMethod.PUT, PATIENTS_API).hasAnyAuthority(ADMIN, PATIENT)
+                        .requestMatchers(HttpMethod.DELETE, PATIENTS_API).hasAuthority(ADMIN)
 
-                        // Doctor actions
-                        .requestMatchers(DOCTOR_ENDPOINTS).hasAuthority("DOCTOR")
+                        // ── AVAILABILITY: set = doctor, view = all ─────────
+                        .requestMatchers(HttpMethod.POST, AVAILABILITY_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.DELETE, AVAILABILITY_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.GET, AVAILABILITY_API).authenticated()
 
-                        // Appointment completion is doctor action
-                        .requestMatchers(HttpMethod.PATCH, "/api/appointments/*/complete").hasAuthority("DOCTOR")
+                        // ── APPOINTMENTS (specific actions FIRST) ──────────
+                        .requestMatchers(HttpMethod.PATCH, APPOINTMENT_COMPLETE).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.POST, APPOINTMENT_BOOK).hasAuthority(PATIENT)
+                        .requestMatchers(HttpMethod.PATCH, APPOINTMENT_CANCEL).hasAuthority(PATIENT)
+                        .requestMatchers(HttpMethod.GET, APPOINTMENTS_API).authenticated()
 
-                        // Patient actions
-                        .requestMatchers(PATIENT_ENDPOINTS).hasAuthority("PATIENT")
+                        // ── PRESCRIPTIONS: write = doctor, read = doctor+patient
+                        .requestMatchers(HttpMethod.POST, PRESCRIPTIONS_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.PUT, PRESCRIPTIONS_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.GET, PRESCRIPTIONS_API).hasAnyAuthority(DOCTOR, PATIENT)
 
-                        // Everything else
+                        // ── MEDICAL RECORDS: write = doctor, read = doctor+patient
+                        .requestMatchers(HttpMethod.POST, MEDICAL_RECORDS_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.PUT, MEDICAL_RECORDS_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.DELETE, MEDICAL_RECORDS_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.GET, MEDICAL_RECORDS_API).hasAnyAuthority(DOCTOR, PATIENT)
+
+                        // ── CATCH ALL ──────────────────────────────────────
                         .anyRequest().authenticated()
                 )
 
