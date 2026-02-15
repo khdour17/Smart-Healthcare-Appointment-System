@@ -1,0 +1,1143 @@
+{
+  "info": {
+    "name": "Smart Healthcare Appointment System",
+    "description": "Full API test collection for the Smart Healthcare Appointment System.\n\nTest order:\n0. Reset Database\n1. Auth (login/register)\n2. Doctor Management\n3. Patient Management\n4. Doctor Availability\n5. Appointments\n6. Prescriptions\n7. Medical Records\n8. Security (unauthorized access)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "adminToken", "value": "" },
+    { "key": "doctorToken", "value": "" },
+    { "key": "patientToken", "value": "" },
+    { "key": "doctorId", "value": "" },
+    { "key": "patientId", "value": "" },
+    { "key": "appointmentId", "value": "" },
+    { "key": "secondAppointmentId", "value": "" },
+    { "key": "prescriptionId", "value": "" },
+    { "key": "medicalRecordId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Reset, login, and registration endpoints",
+      "item": [
+        {
+          "name": "0.1 Reset Database (Admin)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('baseUrl') + '/auth/login',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ username: 'admin', password: 'admin123' }) }",
+                  "}, function (err, res) {",
+                  "    pm.collectionVariables.set('adminToken', res.json().token);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Reset confirmed', () => {",
+                  "    pm.expect(pm.response.json().message).to.include('reset successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "reset"]
+            }
+          }
+        },
+        {
+          "name": "1.1 Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('adminToken', response.token);",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token exists', () => pm.expect(response.token).to.exist);",
+                  "pm.test('Role is ADMIN', () => pm.expect(response.role).to.eql('ADMIN'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Register Doctor (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"dr_smith\",\n    \"email\": \"smith@hospital.com\",\n    \"password\": \"doctor123\",\n    \"name\": \"Dr. Smith\",\n    \"specialty\": \"Cardiology\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/doctor",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "doctor"]
+            }
+          }
+        },
+        {
+          "name": "1.3 Register Patient (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"john_doe\",\n    \"email\": \"john@email.com\",\n    \"password\": \"patient123\",\n    \"name\": \"John Doe\",\n    \"dateOfBirth\": \"1990-05-15\",\n    \"phone\": \"555-0201\",\n    \"address\": \"123 Main St\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/patient",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "patient"]
+            }
+          }
+        },
+        {
+          "name": "1.4 Doctor Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('doctorToken', response.token);",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token exists', () => pm.expect(response.token).to.exist);",
+                  "pm.test('Role is DOCTOR', () => pm.expect(response.role).to.eql('DOCTOR'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"dr_smith\",\n    \"password\": \"doctor123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.5 Patient Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('patientToken', response.token);",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token exists', () => pm.expect(response.token).to.exist);",
+                  "pm.test('Role is PATIENT', () => pm.expect(response.role).to.eql('PATIENT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"john_doe\",\n    \"password\": \"patient123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Doctor Management",
+      "description": "CRUD operations for doctors",
+      "item": [
+        {
+          "name": "2.1 Get All Doctors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "if (response.length > 0) {",
+                  "    pm.collectionVariables.set('doctorId', response[0].id);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(response).to.be.an('array'));",
+                  "pm.test('At least one doctor', () => pm.expect(response.length).to.be.greaterThan(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors"]
+            }
+          }
+        },
+        {
+          "name": "2.2 Get Doctor By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Doctor name exists', () => pm.expect(response.name).to.exist);",
+                  "pm.test('Specialty is Cardiology', () => pm.expect(response.specialty).to.eql('Cardiology'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/{{doctorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "{{doctorId}}"]
+            }
+          }
+        },
+        {
+          "name": "2.3 Search Doctors By Specialty",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(response).to.be.an('array'));",
+                  "pm.test('All results are Cardiology', () => {",
+                  "    response.forEach(doc => {",
+                  "        pm.expect(doc.specialty.toLowerCase()).to.include('cardio');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/specialty/Cardiology",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "specialty", "Cardiology"]
+            }
+          }
+        },
+        {
+          "name": "2.4 Update Doctor (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Name updated', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.name).to.eql('Dr. Smith Updated');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Dr. Smith Updated\",\n    \"specialty\": \"Cardiology\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctors/{{doctorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "{{doctorId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Patient Management",
+      "description": "CRUD operations for patients",
+      "item": [
+        {
+          "name": "3.1 Get All Patients (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "",
+                  "if (response.length > 0) {",
+                  "    pm.collectionVariables.set('patientId', response[0].id);",
+                  "}",
+                  "",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => pm.expect(response).to.be.an('array'));",
+                  "pm.test('At least one patient', () => pm.expect(response.length).to.be.greaterThan(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients"]
+            }
+          }
+        },
+        {
+          "name": "3.2 Get Patient By ID (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Patient name is John Doe', () => {",
+                  "    pm.expect(pm.response.json().name).to.eql('John Doe');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "3.3 Update Patient (Patient)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Phone updated', () => {",
+                  "    pm.expect(pm.response.json().phone).to.eql('555-9999');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"dateOfBirth\": \"1990-05-15\",\n    \"phone\": \"555-9999\",\n    \"address\": \"456 Updated St\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "{{patientId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Doctor Availability",
+      "description": "Doctor sets weekly availability schedule",
+      "item": [
+        {
+          "name": "4.1 Set Availability (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Day is WEDNESDAY', () => {",
+                  "    pm.expect(pm.response.json().dayOfWeek).to.eql('WEDNESDAY');",
+                  "});",
+                  "pm.test('Slot is 30 min', () => {",
+                  "    pm.expect(pm.response.json().slotDurationMinutes).to.eql(30);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"dayOfWeek\": \"WEDNESDAY\",\n    \"startTime\": \"09:00\",\n    \"endTime\": \"17:00\",\n    \"slotDurationMinutes\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/availability/doctor/{{doctorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["availability", "doctor", "{{doctorId}}"]
+            }
+          }
+        },
+        {
+          "name": "4.2 Get Available Slots",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns available slots', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "    pm.expect(response.length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/available-slots?doctorId={{doctorId}}&date=2026-02-18",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "available-slots"],
+              "query": [
+                { "key": "doctorId", "value": "{{doctorId}}" },
+                { "key": "date", "value": "2026-02-18" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Appointments",
+      "description": "Book, cancel, complete appointments + double booking test",
+      "item": [
+        {
+          "name": "5.1 Book Appointment (Patient)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('appointmentId', response.id);",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Status is SCHEDULED', () => pm.expect(response.status).to.eql('SCHEDULED'));",
+                  "pm.test('Start time is 09:00', () => pm.expect(response.startTime).to.include('09:00'));",
+                  "pm.test('End time is 09:30', () => pm.expect(response.endTime).to.include('09:30'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"doctorId\": {{doctorId}},\n    \"appointmentDate\": \"2026-02-18\",\n    \"startTime\": \"09:00\",\n    \"reason\": \"Chest pain\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "patient", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "5.2 Double Booking (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Error message mentions already booked', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('already booked');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"doctorId\": {{doctorId}},\n    \"appointmentDate\": \"2026-02-18\",\n    \"startTime\": \"09:00\",\n    \"reason\": \"Another visit\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "patient", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "5.3 Get Patient Appointments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has appointments', () => {",
+                  "    pm.expect(pm.response.json().length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "patient", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "5.4 Get Doctor Appointments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has appointments', () => {",
+                  "    pm.expect(pm.response.json().length).to.be.greaterThan(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/doctor/{{doctorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "doctor", "{{doctorId}}"]
+            }
+          }
+        },
+        {
+          "name": "5.5 Complete Appointment (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is COMPLETED', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql('COMPLETED');",
+                  "});",
+                  "pm.test('Notes saved', () => {",
+                  "    pm.expect(pm.response.json().notes).to.eql('Patient examined, ECG normal');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/complete?notes=Patient examined, ECG normal",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{appointmentId}}", "complete"],
+              "query": [
+                { "key": "notes", "value": "Patient examined, ECG normal" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.6 Book Second Appointment (For Cancel Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('secondAppointmentId', response.id);",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Status is SCHEDULED', () => pm.expect(response.status).to.eql('SCHEDULED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"doctorId\": {{doctorId}},\n    \"appointmentDate\": \"2026-02-18\",\n    \"startTime\": \"10:00\",\n    \"reason\": \"Follow-up visit\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "patient", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "5.7 Cancel Appointment (Patient)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{secondAppointmentId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{secondAppointmentId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Prescriptions (MongoDB)",
+      "description": "Doctor creates prescriptions, patient views them",
+      "item": [
+        {
+          "name": "6.1 Create Prescription (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('prescriptionId', response.id);",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Diagnosis saved', () => pm.expect(response.diagnosis).to.eql('Mild chest pain'));",
+                  "pm.test('Medicines saved', () => {",
+                  "    pm.expect(response.medicines).to.include('Aspirin 100mg');",
+                  "    pm.expect(response.medicines).to.include('Vitamin D');",
+                  "});",
+                  "pm.test('Patient name populated', () => pm.expect(response.patientName).to.exist);",
+                  "pm.test('Doctor name populated', () => pm.expect(response.doctorName).to.exist);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"appointmentId\": {{appointmentId}},\n    \"medicines\": [\"Aspirin 100mg\", \"Vitamin D\"],\n    \"diagnosis\": \"Mild chest pain\",\n    \"instructions\": \"Take after meals for 2 weeks\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/prescriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["prescriptions"]
+            }
+          }
+        },
+        {
+          "name": "6.2 Get Prescription By ID (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Correct prescription', () => {",
+                  "    pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('prescriptionId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prescriptions/{{prescriptionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["prescriptions", "{{prescriptionId}}"]
+            }
+          }
+        },
+        {
+          "name": "6.3 Get Patient Prescriptions (Patient)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has prescriptions', () => {",
+                  "    pm.expect(pm.response.json().length).to.be.greaterThan(0);",
+                  "});",
+                  "pm.test('Diagnosis is correct', () => {",
+                  "    pm.expect(pm.response.json()[0].diagnosis).to.eql('Mild chest pain');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prescriptions/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["prescriptions", "patient", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "6.4 Update Prescription (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Diagnosis updated', () => {",
+                  "    pm.expect(pm.response.json().diagnosis).to.eql('Updated diagnosis');",
+                  "});",
+                  "pm.test('New medicine added', () => {",
+                  "    pm.expect(pm.response.json().medicines).to.include('Ibuprofen 200mg');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"appointmentId\": {{appointmentId}},\n    \"medicines\": [\"Aspirin 100mg\", \"Vitamin D\", \"Ibuprofen 200mg\"],\n    \"diagnosis\": \"Updated diagnosis\",\n    \"instructions\": \"Updated instructions\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/prescriptions/{{prescriptionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["prescriptions", "{{prescriptionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Medical Records (MongoDB)",
+      "description": "Doctor creates medical records, patient views them",
+      "item": [
+        {
+          "name": "7.1 Create Medical Record (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('medicalRecordId', response.id);",
+                  "",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Title saved', () => pm.expect(response.title).to.eql('Cardiology Consultation'));",
+                  "pm.test('Lab reports saved', () => {",
+                  "    pm.expect(response.labReports).to.include('ECG Report - Normal');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"patientId\": {{patientId}},\n    \"recordDate\": \"2026-02-18\",\n    \"title\": \"Cardiology Consultation\",\n    \"description\": \"Patient presented with chest pain. ECG normal.\",\n    \"prescriptionIds\": [\"{{prescriptionId}}\"],\n    \"labReports\": [\"ECG Report - Normal\", \"Blood Test - Normal\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/medical-records",
+              "host": ["{{baseUrl}}"],
+              "path": ["medical-records"]
+            }
+          }
+        },
+        {
+          "name": "7.2 Get Medical Record By ID (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Correct record', () => {",
+                  "    pm.expect(pm.response.json().title).to.eql('Cardiology Consultation');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/medical-records/{{medicalRecordId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["medical-records", "{{medicalRecordId}}"]
+            }
+          }
+        },
+        {
+          "name": "7.3 Get Patient Medical Records (Patient)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has records', () => {",
+                  "    pm.expect(pm.response.json().length).to.be.greaterThan(0);",
+                  "});",
+                  "pm.test('Title is correct', () => {",
+                  "    pm.expect(pm.response.json()[0].title).to.eql('Cardiology Consultation');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/medical-records/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["medical-records", "patient", "{{patientId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Security Tests",
+      "description": "Verify role-based access control",
+      "item": [
+        {
+          "name": "8.1 No Token → 401 Unauthorized",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 401 (no token)', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/doctors",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors"]
+            }
+          }
+        },
+        {
+          "name": "8.2 Patient Cannot Delete Doctor → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/{{doctorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "{{doctorId}}"]
+            }
+          }
+        },
+        {
+          "name": "8.3 Patient Cannot Create Prescription → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"appointmentId\": 1,\n    \"medicines\": [\"Fake\"],\n    \"diagnosis\": \"Fake\",\n    \"instructions\": \"Fake\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/prescriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["prescriptions"]
+            }
+          }
+        },
+        {
+          "name": "8.4 Doctor Cannot Register Users → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"hacker\",\n    \"email\": \"hack@test.com\",\n    \"password\": \"hack123\",\n    \"name\": \"Hacker\",\n    \"specialty\": \"Hacking\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/doctor",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "doctor"]
+            }
+          }
+        },
+        {
+          "name": "8.5 Doctor Cannot Delete Patient → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "8.6 Patient Cannot Complete Appointment → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{patientToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/{{appointmentId}}/complete?notes=hacked",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "{{appointmentId}}", "complete"],
+              "query": [
+                { "key": "notes", "value": "hacked" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
