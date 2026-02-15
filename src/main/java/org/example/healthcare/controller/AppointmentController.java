@@ -34,9 +34,9 @@ public class AppointmentController {
 
     // ==================== AVAILABLE SLOTS ====================
 
-    @GetMapping("/available-slots/doctor/{doctorId}")
+    @GetMapping("/available-slots")
     public ResponseEntity<List<AvailableSlotResponse>> getAvailableSlots(
-            @PathVariable Long doctorId,
+            @RequestParam Long doctorId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(appointmentService.getAvailableSlots(doctorId, date));
     }

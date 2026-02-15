@@ -4,12 +4,10 @@ import org.example.healthcare.dto.response.AdminResponse;
 import org.example.healthcare.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -26,5 +24,11 @@ public class AdminController {
     @GetMapping("/{id}")
     public ResponseEntity<AdminResponse> getAdminById(@PathVariable Long id) {
         return ResponseEntity.ok(adminService.getAdminById(id));
+    }
+
+    @DeleteMapping("/reset")
+    public ResponseEntity<Map<String, String>> resetDatabase() {
+        adminService.resetDatabase();
+        return ResponseEntity.ok(Map.of("message", "Database reset successfully. Admin account preserved."));
     }
 }

@@ -90,6 +90,7 @@ public class AppointmentService {
 
     // ==================== AVAILABLE SLOTS ====================
 
+    @Transactional(readOnly = true)
     public List<AvailableSlotResponse> getAvailableSlots(Long doctorId, LocalDate date) {
 
         Doctor doctor = doctorRepository.findById(doctorId)
@@ -166,16 +167,19 @@ public class AppointmentService {
 
     // ==================== GET ====================
 
+    @Transactional(readOnly = true)
     public AppointmentResponse getAppointmentById(Long id) {
         return appointmentMapper.toResponse(findAppointmentOrThrow(id));
     }
 
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> getPatientAppointments(Long patientId) {
         return appointmentRepository.findByPatientId(patientId).stream()
                 .map(appointmentMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> getDoctorAppointments(Long doctorId) {
         return appointmentRepository.findByDoctorId(doctorId).stream()
                 .map(appointmentMapper::toResponse)

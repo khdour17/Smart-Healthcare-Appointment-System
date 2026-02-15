@@ -13,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByRole(Role role);
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
+    // Delete all users that are NOT the given role (keeps admin)
+    void deleteAllByRoleNot(Role role);
 }
