@@ -39,14 +39,14 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT (Postman)                      │
+│                        CLIENT (Postman)                     │
 └─────────────────────┬───────────────────────────────────────┘
                       │ HTTP Requests (JSON)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    SECURITY LAYER                            │
+│                    SECURITY LAYER                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │ JWT Filter   │→ │ SecurityConfig│→ │ Role-Based Access │  │
+│  │ JWT Filter   │→ │SecurityConfig│→ │ Role-Based Access │  │
 │  │ (extracts    │  │ (URL rules)  │  │ ADMIN / DOCTOR /  │  │
 │  │  token)      │  │              │  │ PATIENT           │  │
 │  └──────────────┘  └──────────────┘  └───────────────────┘  │
@@ -54,31 +54,32 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     AOP LAYER (Logging)                      │
-│  @LogAppointment → logs booking/cancellation/completion      │
-│  @LogPrescription → logs prescription create/update          │
+│                     AOP LAYER (Logging)                     │
+│  @LogAppointment → logs booking/cancellation/completion     │
+│  @LogPrescription → logs prescription create/update         │
+│  @LogDoctor       → logs doctor CRUD + cache miss/evict     │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   CONTROLLER LAYER (REST)                     │
-│  AuthController │ DoctorController │ AppointmentController   │
-│  AdminController│ PatientController│ PrescriptionController   │
-│                 │ AvailabilityCtrl │ MedicalRecordController  │
+│                   CONTROLLER LAYER (REST)                   │
+│  AuthController │ DoctorController │ AppointmentController  │
+│  AdminController│ PatientController│ PrescriptionController │
+│                 │ AvailabilityCtrl │ MedicalRecordController│
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    SERVICE LAYER (Business Logic)             │
-│  AuthService    │ DoctorService    │ AppointmentService       │
-│  AdminService   │ PatientService   │ PrescriptionService      │
-│                 │ AvailabilityServ │ MedicalRecordService      │
+│                    SERVICE LAYER (Business Logic)           │
+│  AuthService    │ DoctorService    │ AppointmentService     │
+│  AdminService   │ PatientService   │ PrescriptionService    │
+│                 │ AvailabilityServ │ MedicalRecordService   │
 └────────┬────────────────────────────────────┬───────────────┘
          │                                    │
          ▼                                    ▼
 ┌────────────────────────┐    ┌───────────────────────────────┐
-│     MySQL (JPA)        │    │       MongoDB (NoSQL)          │
-│  ┌───────��──────────┐  │    │  ┌─────────────────────────┐  │
+│     MySQL (JPA)        │    │       MongoDB (NoSQL)         │
+│  ┌───────��─────────┐  │    │  ┌─────────────────────────┐  │
 │  │ User             │  │    │  │ Prescription (document) │  │
 │  │ Doctor           │  │    │  │ MedicalRecord (document)│  │
 │  │ Patient          │  │    │  └─────────────────────────┘  │
@@ -295,7 +296,8 @@ Smart-Healthcare-Appointment-System/
 │   │   ├── 📄 LoggingAspect.java
 │   │   └── 📂 annotation/
 │   │       ├── 📄 LogAppointment.java
-│   │       └── 📄 LogPrescription.java
+│   │       ├── 📄 LogPrescription.java
+│   │       └── 📄 LogDoctor.java
 │   │
 │   └── 📂 exception/
 │       ├── 📄 GlobalExceptionHandler.java
@@ -584,9 +586,11 @@ Smart-Healthcare-Appointment-System/
 
 ```java
 @Cacheable("allDoctors")
+@LogDoctor(action = "GET_ALL", cacheAction = "MISS")
 public List<DoctorResponse> getAllDoctors() { ... }
 
-@CacheEvict(value = "allDoctors")
+@CacheEvict(value = "allDoctors", allEntries = true)
+@LogDoctor(action = "UPDATE", cacheAction = "EVICT")
 public DoctorResponse updateDoctor(Long id, ...) { ... }
 ```
 
@@ -625,19 +629,34 @@ public @interface LogAppointment { }
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface LogPrescription { }
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LogDoctor {
+    String action();                      // "GET_ALL", "GET_BY_ID", "UPDATE", "DELETE"
+    String cacheAction() default "NONE";  // "MISS", "EVICT", "NONE"
+}
 ```
 
 ### What Gets Logged
 
 | Event | Log Level | Example Message |
 |-------|-----------|-----------------|
-| Appointment booked | INFO | `[APPOINTMENT] Booked: Patient John Doe with Dr. Smith on 2026-02-18 at 09:00` |
-| Appointment cancelled | WARN | `[APPOINTMENT] Cancelled: Appointment #5` |
-| Appointment completed | INFO | `[APPOINTMENT] Completed: Appointment #5 by Dr. Smith` |
-| Double booking prevented | WARN | `[APPOINTMENT] Double booking attempt prevented for Dr. Smith at 09:00` |
-| Prescription created | INFO | `[PRESCRIPTION] Created for Patient #1 by Doctor #1` |
-| Prescription updated | INFO | `[PRESCRIPTION] Updated: Prescription #abc123` |
-
+| Appointment booking attempt | INFO | `[APPOINTMENT] Attempting to BOOK \| Args: [1, AppointmentRequest(...)]` |
+| Appointment booked | INFO | `[APPOINTMENT] BOOK successful \| Result: AppointmentResponse(...)` |
+| Appointment booking failed | ERROR | `[APPOINTMENT] BOOK failed \| Error: Time slot already booked for this doctor` |
+| Appointment cancelled | INFO | `[APPOINTMENT] CANCEL successful \| Result: Appointment cancelled` |
+| Appointment completed | INFO | `[APPOINTMENT] COMPLETE successful \| Result: AppointmentResponse(...)` |
+| Prescription created | INFO | `[PRESCRIPTION] CREATE successful \| Result: PrescriptionResponse(...)` |
+| Prescription updated | INFO | `[PRESCRIPTION] UPDATE successful \| Result: PrescriptionResponse(...)` |
+| Prescription failed | ERROR | `[PRESCRIPTION] CREATE failed \| Error: Appointment not found with id: 99` |
+| Doctor list fetched (cache miss) | INFO | `[DOCTOR] [CACHE MISS] GET_ALL — fetching from database \| Args: []` |
+| Doctor fetched by ID (cache miss) | INFO | `[DOCTOR] [CACHE MISS] GET_BY_ID — fetching from database \| Args: [1]` |
+| Doctor updated (cache evict) | INFO | `[DOCTOR] [CACHE EVICT] UPDATE — cache will be cleared \| Args: [5, DoctorRequest(...)]` |
+| Doctor deleted (cache evict) | INFO | `[DOCTOR] [CACHE EVICT] DELETE — cache will be cleared \| Args: [5]` |
+| Doctor operation failed | ERROR | `[DOCTOR] UPDATE failed \| Error: Doctor not found with id: 99` |
+| Any service method > 500ms | WARN | `[PERFORMANCE] DoctorService.getAllDoctors() took 750ms (SLOW)` |
+| Any service method ≤ 500ms | DEBUG | `[PERFORMANCE] DoctorService.getDoctorById() took 12ms` |
 ---
 
 ## 🧪 Testing Strategy

@@ -1,6 +1,7 @@
 package org.example.healthcare.aspect;
 
 import org.example.healthcare.aspect.annotation.LogAppointment;
+import org.example.healthcare.aspect.annotation.LogDoctor;
 import org.example.healthcare.aspect.annotation.LogPrescription;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -51,6 +52,32 @@ public class LoggingAspect {
         }
     }
 
+    // ==================== DOCTOR ====================
+
+    @Around("@annotation(logDoctor)")
+    public Object logDoctorAction(ProceedingJoinPoint joinPoint, LogDoctor logDoctor) throws Throwable {
+        String action = logDoctor.action();
+        String cacheAction = logDoctor.cacheAction();
+        Object[] args = joinPoint.getArgs();
+
+        // Log cache context BEFORE executing
+        if ("MISS".equals(cacheAction)) {
+            log.info("[DOCTOR] [CACHE MISS] {} — fetching from database | Args: {}", action, args);
+        } else if ("EVICT".equals(cacheAction)) {
+            log.info("[DOCTOR] [CACHE EVICT] {} — cache will be cleared | Args: {}", action, args);
+        } else {
+            log.info("[DOCTOR] Attempting to {} | Args: {}", action, args);
+        }
+
+        try {
+            Object result = joinPoint.proceed();
+            log.info("[DOCTOR] {} successful | Result: {}", action, result);
+            return result;
+        } catch (Exception e) {
+            log.error("[DOCTOR] {} failed | Error: {}", action, e.getMessage());
+            throw e;
+        }
+    }
     // ==================== PERFORMANCE (All Services) ====================
 
     @Around("execution(* org.example.healthcare.service.*.*(..))")
