@@ -6,6 +6,7 @@ import org.example.healthcare.dto.request.RegisterDoctorRequest;
 import org.example.healthcare.dto.request.RegisterPatientRequest;
 import org.example.healthcare.dto.response.JwtResponse;
 import org.example.healthcare.models.enums.Role;
+import org.example.healthcare.exception.DatabaseOperationException;
 import org.example.healthcare.exception.DuplicateResourceException;
 import org.example.healthcare.models.sql.Admin;
 import org.example.healthcare.models.sql.Doctor;
@@ -18,6 +19,7 @@ import org.example.healthcare.repository.sql.UserRepository;
 import org.example.healthcare.security.CustomUserDetails;
 import org.example.healthcare.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -68,11 +70,15 @@ public class AuthService {
         validateNewUser(request.getUsername(), request.getEmail());
         User savedUser = createUser(request.getUsername(), request.getEmail(), request.getPassword(), Role.ADMIN);
 
-        adminRepository.save(Admin.builder()
-                .user(savedUser)
-                .name(request.getName())
-                .department(request.getDepartment())
-                .build());
+        try {
+            adminRepository.save(Admin.builder()
+                    .user(savedUser)
+                    .name(request.getName())
+                    .department(request.getDepartment())
+                    .build());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to register admin: " + request.getUsername(), ex);
+        }
     }
 
     // ==================== REGISTER DOCTOR ====================
@@ -82,11 +88,15 @@ public class AuthService {
         validateNewUser(request.getUsername(), request.getEmail());
         User savedUser = createUser(request.getUsername(), request.getEmail(), request.getPassword(), Role.DOCTOR);
 
-        doctorRepository.save(Doctor.builder()
-                .user(savedUser)
-                .name(request.getName())
-                .specialty(request.getSpecialty())
-                .build());
+        try {
+            doctorRepository.save(Doctor.builder()
+                    .user(savedUser)
+                    .name(request.getName())
+                    .specialty(request.getSpecialty())
+                    .build());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to register doctor: " + request.getUsername(), ex);
+        }
     }
 
     // ==================== REGISTER PATIENT ====================
@@ -96,33 +106,45 @@ public class AuthService {
         validateNewUser(request.getUsername(), request.getEmail());
         User savedUser = createUser(request.getUsername(), request.getEmail(), request.getPassword(), Role.PATIENT);
 
-        patientRepository.save(Patient.builder()
-                .user(savedUser)
-                .name(request.getName())
-                .dateOfBirth(request.getDateOfBirth())
-                .phone(request.getPhone())
-                .address(request.getAddress())
-                .build());
+        try {
+            patientRepository.save(Patient.builder()
+                    .user(savedUser)
+                    .name(request.getName())
+                    .dateOfBirth(request.getDateOfBirth())
+                    .phone(request.getPhone())
+                    .address(request.getAddress())
+                    .build());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to register patient: " + request.getUsername(), ex);
+        }
     }
 
     // ==================== HELPERS ====================
 
     private void validateNewUser(String username, String email) {
-        if (userRepository.existsByUsername(username)) {
-            throw new DuplicateResourceException("Username already exists");
-        }
-        if (userRepository.existsByEmail(email)) {
-            throw new DuplicateResourceException("Email already exists");
+        try {
+            if (userRepository.existsByUsername(username)) {
+                throw new DuplicateResourceException("Username already exists");
+            }
+            if (userRepository.existsByEmail(email)) {
+                throw new DuplicateResourceException("Email already exists");
+            }
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to validate user: " + username, ex);
         }
     }
 
     private User createUser(String username, String email, String password, Role role) {
-        return userRepository.save(User.builder()
-                .username(username)
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .role(role)
-                .enabled(true)
-                .build());
+        try {
+            return userRepository.save(User.builder()
+                    .username(username)
+                    .email(email)
+                    .password(passwordEncoder.encode(password))
+                    .role(role)
+                    .enabled(true)
+                    .build());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to create user: " + username, ex);
+        }
     }
 }

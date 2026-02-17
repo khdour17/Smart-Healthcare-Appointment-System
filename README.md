@@ -27,6 +27,7 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
 - [Security Architecture](#-security-architecture)
 - [Caching Strategy](#-caching-strategy)
 - [AOP Logging](#-aop-logging)
+- [Exception Handling](#-exception-handling)
 - [Testing Strategy](#-testing-strategy)
 - [Setup & Installation](#-setup--installation)
 - [Running the Application](#-running-the-application)
@@ -39,47 +40,47 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT (Postman)                     │
+│                        CLIENT (Postman)                      │
 └─────────────────────┬───────────────────────────────────────┘
                       │ HTTP Requests (JSON)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    SECURITY LAYER                           │
+│                    SECURITY LAYER                            │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │ JWT Filter   │→ │SecurityConfig│→ │ Role-Based Access │  │
+│  │ JWT Filter   │→ │ SecurityConfig│→ │ Role-Based Access │  │
 │  │ (extracts    │  │ (URL rules)  │  │ ADMIN / DOCTOR /  │  │
 │  │  token)      │  │              │  │ PATIENT           │  │
 │  └──────────────┘  └──────────────┘  └───────────────────┘  │
+└──��──────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     AOP LAYER (Logging)                      │
+│  @LogAppointment  → logs booking/cancellation/completion     │
+│  @LogPrescription → logs prescription create/update          │
+│  @LogDoctor       → logs doctor CRUD + cache miss/evict      │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     AOP LAYER (Logging)                     │
-│  @LogAppointment → logs booking/cancellation/completion     │
-│  @LogPrescription → logs prescription create/update         │
-│  @LogDoctor       → logs doctor CRUD + cache miss/evict     │
+│                   CONTROLLER LAYER (REST)                     │
+│  AuthController │ DoctorController │ AppointmentController   │
+│  AdminController│ PatientController│ PrescriptionController   │
+│                 │ AvailabilityCtrl │ MedicalRecordController  │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   CONTROLLER LAYER (REST)                   │
-│  AuthController │ DoctorController │ AppointmentController  │
-│  AdminController│ PatientController│ PrescriptionController │
-│                 │ AvailabilityCtrl │ MedicalRecordController│
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    SERVICE LAYER (Business Logic)           │
-│  AuthService    │ DoctorService    │ AppointmentService     │
-│  AdminService   │ PatientService   │ PrescriptionService    │
-│                 │ AvailabilityServ │ MedicalRecordService   │
+│                    SERVICE LAYER (Business Logic)             │
+│  AuthService    │ DoctorService    │ AppointmentService       │
+│  AdminService   │ PatientService   │ PrescriptionService      │
+│                 │ AvailabilityServ │ MedicalRecordService      │
 └────────┬────────────────────────────────────┬───────────────┘
          │                                    │
          ▼                                    ▼
 ┌────────────────────────┐    ┌───────────────────────────────┐
-│     MySQL (JPA)        │    │       MongoDB (NoSQL)         │
-│  ┌───────��─────────┐  │    │  ┌─────────────────────────┐  │
+│     MySQL (JPA)        │    │       MongoDB (NoSQL)          │
+│  ┌──────────────────┐  │    │  ┌─────────────────────────┐  │
 │  │ User             │  │    │  │ Prescription (document) │  │
 │  │ Doctor           │  │    │  │ MedicalRecord (document)│  │
 │  │ Patient          │  │    │  └─────────────────────────┘  │
@@ -292,7 +293,7 @@ Smart-Healthcare-Appointment-System/
 │   │   ├── 📄 PatientMapper.java
 │   │   └── 📄 AppointmentMapper.java
 │   │
-│   ├── 📂 aop/
+│   ├── 📂 aspect/
 │   │   ├── 📄 LoggingAspect.java
 │   │   └── 📂 annotation/
 │   │       ├── 📄 LogAppointment.java
@@ -302,7 +303,9 @@ Smart-Healthcare-Appointment-System/
 │   └── 📂 exception/
 │       ├── 📄 GlobalExceptionHandler.java
 │       ├── 📄 ResourceNotFoundException.java
-│       └── 📄 DoubleBookingException.java
+│       ├── 📄 DoubleBookingException.java
+│       ├── 📄 DuplicateResourceException.java
+│       └── 📄 DatabaseOperationException.java
 │
 ├── 📂 src/main/resources/
 │   ├── 📄 application.yml
@@ -328,7 +331,7 @@ Smart-Healthcare-Appointment-System/
 ### MySQL (Relational — JPA/Hibernate)
 
 ```
-┌─────���────────────┐       ┌──────────────────┐
+┌──────────────────┐       ┌──────────────────┐
 │      User        │       │     Doctor       │
 ├──────────────────┤       ├──────────────────┤
 │ id (PK)          │──┐    │ id (PK)          │
@@ -350,7 +353,7 @@ Smart-Healthcare-Appointment-System/
                       │    │ slot_duration_minutes   │
                       │    └────────────────────────┘
                       │
-┌──────────────────┐  │    ┌──────────────────────┐
+┌──────────────────┐  │    ┌──��───────────────────┐
 │     Patient      │  │    │    Appointment        │
 ├──────────────────┤  │    ├──────────────────────-┤
 │ id (PK)          │←─┤    │ id (PK)               │
@@ -421,6 +424,8 @@ Smart-Healthcare-Appointment-System/
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
+| `GET` | `/api/admin` | List all admins | Admin |
+| `GET` | `/api/admin/search?id=1` | Get admin by ID | Admin |
 | `DELETE` | `/api/admin/reset` | Reset database (keeps admin) | Admin |
 
 ### Doctors
@@ -428,8 +433,8 @@ Smart-Healthcare-Appointment-System/
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | `GET` | `/api/doctors` | List all doctors | All authenticated |
-| `GET` | `/api/doctors/{id}` | Get doctor by ID | All authenticated |
-| `GET` | `/api/doctors/specialty/{specialty}` | Search by specialty | All authenticated |
+| `GET` | `/api/doctors/search?id=1` | Get doctor by ID | All authenticated |
+| `GET` | `/api/doctors/specialty?specialty=Cardiology` | Search by specialty | All authenticated |
 | `PUT` | `/api/doctors/{id}` | Update doctor | Admin |
 | `DELETE` | `/api/doctors/{id}` | Delete doctor | Admin |
 
@@ -438,7 +443,7 @@ Smart-Healthcare-Appointment-System/
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | `GET` | `/api/patients` | List all patients | Admin, Doctor |
-| `GET` | `/api/patients/{id}` | Get patient by ID | Admin, Doctor |
+| `GET` | `/api/patients/search?id=1` | Get patient by ID | Admin, Doctor |
 | `PUT` | `/api/patients/{id}` | Update patient | Admin, Patient |
 | `DELETE` | `/api/patients/{id}` | Delete patient | Admin |
 
@@ -455,10 +460,11 @@ Smart-Healthcare-Appointment-System/
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | `POST` | `/api/appointments/patient/{patientId}` | Book appointment | Patient |
+| `GET` | `/api/appointments/search?id=1` | Get appointment by ID | All authenticated |
 | `GET` | `/api/appointments/patient/{patientId}` | Get patient appointments | All authenticated |
 | `GET` | `/api/appointments/doctor/{doctorId}` | Get doctor appointments | All authenticated |
-| `GET` | `/api/appointments/available-slots` | Get available time slots | All authenticated |
-| `PATCH` | `/api/appointments/{id}/complete` | Mark as completed | Doctor |
+| `GET` | `/api/appointments/available-slots?doctorId=1&date=2026-02-18` | Get available time slots | All authenticated |
+| `PATCH` | `/api/appointments/{id}/complete?notes=...` | Mark as completed | Doctor |
 | `PATCH` | `/api/appointments/{id}/cancel` | Cancel appointment | Patient |
 
 ### Prescriptions (MongoDB)
@@ -466,8 +472,10 @@ Smart-Healthcare-Appointment-System/
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | `POST` | `/api/prescriptions` | Create prescription | Doctor |
-| `GET` | `/api/prescriptions/{id}` | Get by ID | Doctor, Patient |
+| `GET` | `/api/prescriptions/search?id=abc123` | Get by ID | Doctor, Patient |
+| `GET` | `/api/prescriptions/appointment?appointmentId=1` | Get by appointment | Doctor, Patient |
 | `GET` | `/api/prescriptions/patient/{patientId}` | Get patient's prescriptions | Doctor, Patient |
+| `GET` | `/api/prescriptions/doctor/{doctorId}` | Get doctor's prescriptions | Doctor, Patient |
 | `PUT` | `/api/prescriptions/{id}` | Update prescription | Doctor |
 
 ### Medical Records (MongoDB)
@@ -475,7 +483,7 @@ Smart-Healthcare-Appointment-System/
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | `POST` | `/api/medical-records` | Create record | Doctor |
-| `GET` | `/api/medical-records/{id}` | Get by ID | Doctor, Patient |
+| `GET` | `/api/medical-records/search?id=abc123` | Get by ID | Doctor, Patient |
 | `GET` | `/api/medical-records/patient/{patientId}` | Get patient's records | Doctor, Patient |
 | `PUT` | `/api/medical-records/{id}` | Update record | Doctor |
 | `DELETE` | `/api/medical-records/{id}` | Delete record | Doctor |
@@ -530,23 +538,6 @@ Smart-Healthcare-Appointment-System/
 7. SecurityConfig checks role against endpoint rules
                     │
 8. Request proceeds or is rejected (401/403)
-```
-
-### Security Implementation
-
-```
-┌─────────────────────────────────────────────────────┐
-│                  SecurityConfig                      │
-│                                                     │
-│  No Token?                                          │
-│  └→ authenticationEntryPoint → 401 + JSON body      │
-│                                                     │
-│  Valid Token, Wrong Role?                           │
-│  └→ accessDeniedHandler → 403 + JSON body           │
-│                                                     │
-│  Valid Token, Correct Role?                         │
-│  └→ Request proceeds to controller                  │
-└─────────────────────────────────────────────────────┘
 ```
 
 ### Password Security
@@ -608,27 +599,16 @@ public DoctorResponse updateDoctor(Long id, ...) { ... }
 
 ## 📋 AOP Logging
 
-### How It Works
-
-```
-Normal code:                    With AOP:
-
-bookAppointment()               bookAppointment()
-  └→ save to DB                   ├→ @Around BEFORE: "Booking attempt..."
-                                  ├→ save to DB
-                                  └→ @Around AFTER:  "Booking successful"
-```
-
 ### Custom Annotations
 
 ```java
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface LogAppointment { }
+public @interface LogAppointment { String action(); }
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface LogPrescription { }
+public @interface LogPrescription { String action(); }
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -657,6 +637,30 @@ public @interface LogDoctor {
 | Doctor operation failed | ERROR | `[DOCTOR] UPDATE failed \| Error: Doctor not found with id: 99` |
 | Any service method > 500ms | WARN | `[PERFORMANCE] DoctorService.getAllDoctors() took 750ms (SLOW)` |
 | Any service method ≤ 500ms | DEBUG | `[PERFORMANCE] DoctorService.getDoctorById() took 12ms` |
+
+---
+
+## 🛡 Exception Handling
+
+All exceptions are handled globally via `@RestControllerAdvice` in `GlobalExceptionHandler`. Every repository operation is wrapped in `try-catch DataAccessException` at the service layer.
+
+### Exception Handling Matrix
+
+| Exception | HTTP Status | When It Fires |
+|-----------|-------------|---------------|
+| `ResourceNotFoundException` | 404 | Entity not found by ID |
+| `DuplicateResourceException` | 409 | Duplicate username/email on registration |
+| `DoubleBookingException` | 409 | Time slot conflict or doctor unavailable |
+| `DatabaseOperationException` | 500 | Save/delete/find fails (connection, timeout) |
+| `DataIntegrityViolationException` | 409 | FK constraint or unique violation on save |
+| `DataAccessException` | 503 | Database unreachable or connection lost |
+| `IllegalArgumentException` | 400 | Invalid state transition (cancel completed) |
+| `BadCredentialsException` | 401 | Wrong username or password |
+| `MethodArgumentNotValidException` | 400 | `@Valid` DTO validation fails |
+| `MissingServletRequestParameterException` | 400 | Required `@RequestParam` missing |
+| `MethodArgumentTypeMismatchException` | 400 | Wrong type for parameter (e.g. `?id=abc`) |
+| `Exception` (catch-all) | 500 | Any other unexpected error |
+
 ---
 
 ## 🧪 Testing Strategy
@@ -690,32 +694,6 @@ Test Class (thin)                    Helper (logic)
                                     │  createAppointment()│
                                     └───────────────────┘
 ```
-
-### Key Test: Double Booking Prevention
-
-```java
-when(appointmentRepository.countOverlappingAppointments(...)).thenReturn(1L);
-
-assertThrows(DoubleBookingException.class,
-    () -> appointmentService.bookAppointment(patientId, request));
-
-verify(appointmentRepository, never()).save(any());
-```
-
-### API Tests (Postman — 35 requests)
-
-| Section | Requests | What's Tested |
-|---------|----------|---------------|
-| 0. Reset | 1 | Database cleanup for repeatable runs |
-| 1. Authentication | 5 | Login (3 roles), register doctor/patient |
-| 2. Doctor Management | 4 | CRUD + specialty search |
-| 3. Patient Management | 3 | Get all, get by ID, update |
-| 4. Availability | 2 | Set schedule, view slots |
-| 5. Appointments | 7 | Book, double-book (409), view, complete, cancel |
-| 6. Prescriptions | 4 | Create, view, update (MongoDB) |
-| 7. Medical Records | 3 | Create, view by ID, view by patient (MongoDB) |
-| 8. Security | 6 | 401 unauthorized, 403 forbidden (5 scenarios) |
-| **Total** | **35** | |
 
 ### Running Tests
 

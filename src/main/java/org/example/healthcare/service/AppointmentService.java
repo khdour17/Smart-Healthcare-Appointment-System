@@ -5,6 +5,7 @@ import org.example.healthcare.dto.request.AppointmentRequest;
 import org.example.healthcare.dto.response.AppointmentResponse;
 import org.example.healthcare.dto.response.AvailableSlotResponse;
 import org.example.healthcare.models.enums.AppointmentStatus;
+import org.example.healthcare.exception.DatabaseOperationException;
 import org.example.healthcare.exception.DoubleBookingException;
 import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.AppointmentMapper;
@@ -17,6 +18,7 @@ import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,39 +44,31 @@ public class AppointmentService {
     @LogAppointment(action = "BOOK")
     public AppointmentResponse bookAppointment(Long patientId, AppointmentRequest request) {
 
-        // 1. Validate patient
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+        Patient patient = findPatientOrThrow(patientId);
+        Doctor doctor = findDoctorOrThrow(request.getDoctorId());
 
-        // 2. Validate doctor
-        Doctor doctor = doctorRepository.findById(request.getDoctorId())
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.getDoctorId()));
+        DoctorAvailability availability = findAvailabilityOrThrow(
+                request.getDoctorId(), request.getAppointmentDate());
 
-        // 3. Get availability for this day
-        DoctorAvailability availability = availabilityRepository
-                .findByDoctorIdAndDayOfWeek(request.getDoctorId(), request.getAppointmentDate().getDayOfWeek())
-                .orElseThrow(() -> new DoubleBookingException(
-                        "Doctor not available on " + request.getAppointmentDate().getDayOfWeek()));
-
-        // 4. Calculate end time from slot duration
         LocalTime endTime = request.getStartTime().plusMinutes(availability.getSlotDurationMinutes());
 
-        // 5. Validate within working hours
         if (request.getStartTime().isBefore(availability.getStartTime()) ||
                 endTime.isAfter(availability.getEndTime())) {
             throw new DoubleBookingException("Time outside doctor's working hours (" +
                     availability.getStartTime() + " - " + availability.getEndTime() + ")");
         }
 
-        // 6. Check double booking
-        Long overlappingCount = appointmentRepository.countOverlappingAppointments(
-                request.getDoctorId(), request.getAppointmentDate(), request.getStartTime(), endTime);
+        try {
+            Long overlappingCount = appointmentRepository.countOverlappingAppointments(
+                    request.getDoctorId(), request.getAppointmentDate(), request.getStartTime(), endTime);
 
-        if (overlappingCount > 0) {
-            throw new DoubleBookingException("Time slot already booked for this doctor");
+            if (overlappingCount > 0) {
+                throw new DoubleBookingException("Time slot already booked for this doctor");
+            }
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to check appointment availability", ex);
         }
 
-        // 7. Create appointment
         Appointment appointment = Appointment.builder()
                 .patient(patient)
                 .doctor(doctor)
@@ -85,7 +79,11 @@ public class AppointmentService {
                 .status(AppointmentStatus.SCHEDULED)
                 .build();
 
-        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        try {
+            return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to book appointment", ex);
+        }
     }
 
     // ==================== AVAILABLE SLOTS ====================
@@ -93,18 +91,16 @@ public class AppointmentService {
     @Transactional(readOnly = true)
     public List<AvailableSlotResponse> getAvailableSlots(Long doctorId, LocalDate date) {
 
-        Doctor doctor = doctorRepository.findById(doctorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + doctorId));
+        Doctor doctor = findDoctorOrThrow(doctorId);
+        DoctorAvailability availability = findAvailabilityOrThrow(doctorId, date);
 
-        DoctorAvailability availability = availabilityRepository
-                .findByDoctorIdAndDayOfWeek(doctorId, date.getDayOfWeek())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Doctor not available on " + date.getDayOfWeek()));
+        List<Appointment> bookedAppointments;
+        try {
+            bookedAppointments = appointmentRepository.findBookedAppointments(doctorId, date);
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch booked appointments for doctor id: " + doctorId, ex);
+        }
 
-        // Get already booked appointments
-        List<Appointment> bookedAppointments = appointmentRepository.findBookedAppointments(doctorId, date);
-
-        // Generate all possible slots and filter out booked ones
         List<AvailableSlotResponse> availableSlots = new ArrayList<>();
         LocalTime current = availability.getStartTime();
         int duration = availability.getSlotDurationMinutes();
@@ -145,7 +141,11 @@ public class AppointmentService {
         }
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointmentRepository.save(appointment);
+        try {
+            appointmentRepository.save(appointment);
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to cancel appointment with id: " + appointmentId, ex);
+        }
     }
 
     // ==================== COMPLETE (Doctor) ====================
@@ -162,7 +162,11 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.COMPLETED);
         appointment.setNotes(notes);
 
-        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        try {
+            return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to complete appointment with id: " + appointmentId, ex);
+        }
     }
 
     // ==================== GET ====================
@@ -174,22 +178,63 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getPatientAppointments(Long patientId) {
-        return appointmentRepository.findByPatientId(patientId).stream()
-                .map(appointmentMapper::toResponse)
-                .collect(Collectors.toList());
+        try {
+            return appointmentRepository.findByPatientId(patientId).stream()
+                    .map(appointmentMapper::toResponse)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch appointments for patient id: " + patientId, ex);
+        }
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getDoctorAppointments(Long doctorId) {
-        return appointmentRepository.findByDoctorId(doctorId).stream()
-                .map(appointmentMapper::toResponse)
-                .collect(Collectors.toList());
+        try {
+            return appointmentRepository.findByDoctorId(doctorId).stream()
+                    .map(appointmentMapper::toResponse)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch appointments for doctor id: " + doctorId, ex);
+        }
     }
 
-    // ==================== HELPER ====================
+    // ==================== HELPERS ====================
 
     private Appointment findAppointmentOrThrow(Long id) {
-        return appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+        try {
+            return appointmentRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch appointment with id: " + id, ex);
+        }
+    }
+
+    private Patient findPatientOrThrow(Long id) {
+        try {
+            return patientRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + id));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch patient with id: " + id, ex);
+        }
+    }
+
+    private Doctor findDoctorOrThrow(Long id) {
+        try {
+            return doctorRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch doctor with id: " + id, ex);
+        }
+    }
+
+    private DoctorAvailability findAvailabilityOrThrow(Long doctorId, LocalDate date) {
+        try {
+            return availabilityRepository
+                    .findByDoctorIdAndDayOfWeek(doctorId, date.getDayOfWeek())
+                    .orElseThrow(() -> new DoubleBookingException(
+                            "Doctor not available on " + date.getDayOfWeek()));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch availability for doctor id: " + doctorId, ex);
+        }
     }
 }

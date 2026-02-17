@@ -280,9 +280,12 @@
               { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/doctors/{{doctorId}}",
+              "raw": "{{baseUrl}}/doctors/search?id={{doctorId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["doctors", "{{doctorId}}"]
+              "path": ["doctors", "search"],
+              "query": [
+                { "key": "id", "value": "{{doctorId}}" }
+              ]
             }
           }
         },
@@ -312,9 +315,12 @@
               { "key": "Authorization", "value": "Bearer {{patientToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/doctors/specialty/Cardiology",
+              "raw": "{{baseUrl}}/doctors/specialty?specialty=Cardiology",
               "host": ["{{baseUrl}}"],
-              "path": ["doctors", "specialty", "Cardiology"]
+              "path": ["doctors", "specialty"],
+              "query": [
+                { "key": "specialty", "value": "Cardiology" }
+              ]
             }
           }
         },
@@ -410,9 +416,12 @@
               { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/patients/{{patientId}}",
+              "raw": "{{baseUrl}}/patients/search?id={{patientId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["patients", "{{patientId}}"]
+              "path": ["patients", "search"],
+              "query": [
+                { "key": "id", "value": "{{patientId}}" }
+              ]
             }
           }
         },
@@ -806,14 +815,47 @@
               { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/prescriptions/{{prescriptionId}}",
+              "raw": "{{baseUrl}}/prescriptions/search?id={{prescriptionId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["prescriptions", "{{prescriptionId}}"]
+              "path": ["prescriptions", "search"],
+              "query": [
+                { "key": "id", "value": "{{prescriptionId}}" }
+              ]
             }
           }
         },
         {
-          "name": "6.3 Get Patient Prescriptions (Patient)",
+          "name": "6.3 Get Prescription By Appointment ID (Doctor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Correct appointment link', () => {",
+                  "    pm.expect(pm.response.json().appointmentId).to.eql(parseInt(pm.collectionVariables.get('appointmentId')));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/prescriptions/appointment?appointmentId={{appointmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["prescriptions", "appointment"],
+              "query": [
+                { "key": "appointmentId", "value": "{{appointmentId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "6.4 Get Patient Prescriptions (Patient)",
           "event": [
             {
               "listen": "test",
@@ -843,7 +885,7 @@
           }
         },
         {
-          "name": "6.4 Update Prescription (Doctor)",
+          "name": "6.5 Update Prescription (Doctor)",
           "event": [
             {
               "listen": "test",
@@ -940,9 +982,12 @@
               { "key": "Authorization", "value": "Bearer {{doctorToken}}" }
             ],
             "url": {
-              "raw": "{{baseUrl}}/medical-records/{{medicalRecordId}}",
+              "raw": "{{baseUrl}}/medical-records/search?id={{medicalRecordId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["medical-records", "{{medicalRecordId}}"]
+              "path": ["medical-records", "search"],
+              "query": [
+                { "key": "id", "value": "{{medicalRecordId}}" }
+              ]
             }
           }
         },

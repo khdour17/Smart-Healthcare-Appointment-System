@@ -30,8 +30,8 @@ public class MedicalRecordController {
 
     // ==================== GET ====================
 
-    @GetMapping("/{id}")
-    public ResponseEntity<MedicalRecordResponse> getMedicalRecordById(@PathVariable String id) {
+    @GetMapping("/search")
+    public ResponseEntity<MedicalRecordResponse> getMedicalRecordById(@RequestParam String id) {
         return ResponseEntity.ok(medicalRecordService.getMedicalRecordById(id));
     }
 

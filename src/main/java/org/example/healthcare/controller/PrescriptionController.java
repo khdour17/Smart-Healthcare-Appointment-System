@@ -29,13 +29,13 @@ public class PrescriptionController {
 
     // ==================== GET ====================
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PrescriptionResponse> getPrescriptionById(@PathVariable String id) {
+    @GetMapping("/search")
+    public ResponseEntity<PrescriptionResponse> getPrescriptionById(@RequestParam String id) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionById(id));
     }
 
-    @GetMapping("/appointment/{appointmentId}")
-    public ResponseEntity<PrescriptionResponse> getPrescriptionByAppointmentId(@PathVariable Long appointmentId) {
+    @GetMapping("/appointment")
+    public ResponseEntity<PrescriptionResponse> getPrescriptionByAppointmentId(@RequestParam Long appointmentId) {
         return ResponseEntity.ok(prescriptionService.getPrescriptionByAppointmentId(appointmentId));
     }
 

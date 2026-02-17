@@ -21,8 +21,8 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllAdmins());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AdminResponse> getAdminById(@PathVariable Long id) {
+    @GetMapping("/search")
+    public ResponseEntity<AdminResponse> getAdminById(@RequestParam Long id) {
         return ResponseEntity.ok(adminService.getAdminById(id));
     }
 

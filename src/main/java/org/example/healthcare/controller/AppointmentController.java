@@ -43,8 +43,8 @@ public class AppointmentController {
 
     // ==================== GET ====================
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AppointmentResponse> getAppointmentById(@PathVariable Long id) {
+    @GetMapping("/search")
+    public ResponseEntity<AppointmentResponse> getAppointmentById(@RequestParam Long id) {
         return ResponseEntity.ok(appointmentService.getAppointmentById(id));
     }
 

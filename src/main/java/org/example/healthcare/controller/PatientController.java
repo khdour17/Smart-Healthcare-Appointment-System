@@ -18,15 +18,15 @@ public class PatientController {
 
     private final PatientService patientService;
 
-    // ==================== GET (Admin only) ====================
+    // ==================== GET (Admin, Doctor) ====================
 
     @GetMapping
     public ResponseEntity<List<PatientResponse>> getAllPatients() {
         return ResponseEntity.ok(patientService.getAllPatients());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<PatientResponse> getPatientById(@PathVariable Long id) {
+    @GetMapping("/search")
+    public ResponseEntity<PatientResponse> getPatientById(@RequestParam Long id) {
         return ResponseEntity.ok(patientService.getPatientById(id));
     }
 

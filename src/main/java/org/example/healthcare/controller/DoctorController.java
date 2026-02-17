@@ -25,13 +25,13 @@ public class DoctorController {
         return ResponseEntity.ok(doctorService.getAllDoctors());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<DoctorResponse> getDoctorById(@PathVariable Long id) {
+    @GetMapping("/search")
+    public ResponseEntity<DoctorResponse> getDoctorById(@RequestParam Long id) {
         return ResponseEntity.ok(doctorService.getDoctorById(id));
     }
 
-    @GetMapping("/specialty/{specialty}")
-    public ResponseEntity<List<DoctorResponse>> getDoctorsBySpecialty(@PathVariable String specialty) {
+    @GetMapping("/specialty")
+    public ResponseEntity<List<DoctorResponse>> getDoctorsBySpecialty(@RequestParam String specialty) {
         return ResponseEntity.ok(doctorService.getDoctorsBySpecialty(specialty));
     }
 
