@@ -207,6 +207,9 @@ Hibernate's caching uses JCache (JSR-107) as an abstraction. Ehcache is the conc
 ```
 Smart-Healthcare-Appointment-System/
 │
+├── 📄 Dockerfile                    ← NEW
+├── 📄 docker-compose.yml            ← NEW
+├── 📄 .dockerignore                 ← NEW
 ├── 📄 pom.xml
 ├── 📄 README.md
 ├── 📄 Smart-Healthcare-Postman-Collection.json
@@ -762,6 +765,38 @@ mvn clean install
 ```
 
 ---
+
+## 🐳 Docker
+
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) 20.10+
+- [Docker Compose](https://docs.docker.com/compose/install/) v2.0+
+
+### Quick Start (One Command)
+
+```bash
+docker compose up --build
+```
+
+This starts **3 containers**:
+
+|      Container      |         Image         | Port (Host → Container) |
+|---------------------|-----------------------|-------------------------|
+| `healthcare-mysql`  |       `mysql:8.0`     |      `3307 → 3306`      |
+| `healthcare-mongodb`|       `mongo:7.0`     |      `27018 → 27017`    |
+|   `healthcare-app`  | Built from Dockerfile |      `8080 → 8080`      |
+
+### Access
+- **API**: `http://localhost:8080/api`
+- **MySQL**: `localhost:3307` (user: `root`, password: `1234`)
+- **MongoDB**: `localhost:27018`
+
+### Stop
+
+```bash
+docker compose down       # Keep data
+docker compose down -v    # Delete data
+```
 
 ## 🚀 Running the Application
 

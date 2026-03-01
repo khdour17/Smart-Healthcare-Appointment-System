@@ -1,0 +1,31 @@
+# Build output
+target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Git
+.git/
+.gitignore
+
+# Docker (don't recursively copy docker files into the image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+screenshots/
+*.md
+
+# Postman
+Smart-Healthcare-Postman-Collection.json
