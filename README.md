@@ -45,41 +45,41 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
                       │ HTTP Requests (JSON)
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    SECURITY LAYER                            │
+│                    SECURITY LAYER                           │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │ JWT Filter   │→ │ SecurityConfig│→ │ Role-Based Access │  │
+│  │ JWT Filter   │→ │ SecurityConfig│→ │ Role-Based Access│  │
 │  │ (extracts    │  │ (URL rules)  │  │ ADMIN / DOCTOR /  │  │
 │  │  token)      │  │              │  │ PATIENT           │  │
 │  └──────────────┘  └──────────────┘  └───────────────────┘  │
-└──��──────────────────┬───────────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     AOP LAYER (Logging)                      │
-│  @LogAppointment  → logs booking/cancellation/completion     │
-│  @LogPrescription → logs prescription create/update          │
-│  @LogDoctor       → logs doctor CRUD + cache miss/evict      │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   CONTROLLER LAYER (REST)                     │
-│  AuthController │ DoctorController │ AppointmentController   │
-│  AdminController│ PatientController│ PrescriptionController   │
-│                 │ AvailabilityCtrl │ MedicalRecordController  │
+│                     AOP LAYER (Logging)                     │
+│  @LogAppointment  → logs booking/cancellation/completion    │
+│  @LogPrescription → logs prescription create/update         │
+│  @LogDoctor       → logs doctor CRUD + cache miss/evict     │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    SERVICE LAYER (Business Logic)             │
-│  AuthService    │ DoctorService    │ AppointmentService       │
-│  AdminService   │ PatientService   │ PrescriptionService      │
-│                 │ AvailabilityServ │ MedicalRecordService      │
+│                   CONTROLLER LAYER (REST)                   │
+│  AuthController │ DoctorController │ AppointmentController  │
+│  AdminController│ PatientController│ PrescriptionController │
+│                 │ AvailabilityCtrl │ MedicalRecordController│
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    SERVICE LAYER (Business Logic)           │
+│  AuthService    │ DoctorService    │ AppointmentService     │
+│  AdminService   │ PatientService   │ PrescriptionService    │
+│                 │ AvailabilityServ │ MedicalRecordService   │
 └────────┬────────────────────────────────────┬───────────────┘
          │                                    │
          ▼                                    ▼
 ┌────────────────────────┐    ┌───────────────────────────────┐
-│     MySQL (JPA)        │    │       MongoDB (NoSQL)          │
+│     MySQL (JPA)        │    │       MongoDB (NoSQL)         │
 │  ┌──────────────────┐  │    │  ┌─────────────────────────┐  │
 │  │ User             │  │    │  │ Prescription (document) │  │
 │  │ Doctor           │  │    │  │ MedicalRecord (document)│  │
@@ -207,9 +207,9 @@ Hibernate's caching uses JCache (JSR-107) as an abstraction. Ehcache is the conc
 ```
 Smart-Healthcare-Appointment-System/
 │
-├── 📄 Dockerfile                    ← NEW
-├── 📄 docker-compose.yml            ← NEW
-├── 📄 .dockerignore                 ← NEW
+├── 📄 Dockerfile                    
+├── 📄 docker-compose.yml            
+├── 📄 .dockerignore                 
 ├── 📄 pom.xml
 ├── 📄 README.md
 ├── 📄 Smart-Healthcare-Postman-Collection.json
@@ -338,7 +338,7 @@ Smart-Healthcare-Appointment-System/
 │      User        │       │     Doctor       │
 ├──────────────────┤       ├──────────────────┤
 │ id (PK)          │──┐    │ id (PK)          │
-│ username (unique) │  │    │ name             │
+│ username (unique)│  │    │ name             │
 │ email (unique)   │  ├───→│ specialty        │
 │ password (hash)  │  │    │ user_id (FK→User)│
 │ role (enum)      │  │    │ created_at       │
@@ -346,19 +346,19 @@ Smart-Healthcare-Appointment-System/
 └──────────────────┘  │    └──────┬───────────┘
                       │           │
                       │    ┌──────┴───────────────┐
-                      │    │ DoctorAvailability    │
-                      │    ├──────────────────────-┤
-                      │    │ id (PK)               │
-                      │    │ doctor_id (FK→Doctor)  │
-                      │    │ day_of_week (enum)     │
-                      │    │ start_time             │
-                      │    │ end_time               │
-                      │    │ slot_duration_minutes   │
-                      │    └────────────────────────┘
+                      │    │ DoctorAvailability   │
+                      │    ├──────────────────────┤
+                      │    │ id (PK)              │
+                      │    │ doctor_id (FK→Doctor)│
+                      │    │ day_of_week (enum)   │
+                      │    │ start_time           │
+                      │    │ end_time             │
+                      │    │ slot_duration_minutes│
+                      │    └──────────────────────┘
                       │
-┌──────────────────┐  │    ┌──��───────────────────┐
+┌──────────────────┐  │    ┌───────────────────────┐
 │     Patient      │  │    │    Appointment        │
-├──────────────────┤  │    ├──────────────────────-┤
+├──────────────────┤  │    ├───────────────────────┤
 │ id (PK)          │←─┤    │ id (PK)               │
 │ name             │  │    │ patient_id (FK→Patient)│
 │ date_of_birth    │  ├───→│ doctor_id (FK→Doctor)  │
@@ -570,7 +570,7 @@ Smart-Healthcare-Appointment-System/
 ├────────────────────────────────────────────────────────┤
 │  Level 3: Spring Cache (@Cacheable)                    │
 │  ├── Method-level caching on DoctorService             │
-│  ├── getAllDoctors() → cached, skips service logic      │
+│  ├── getAllDoctors() → cached, skips service logic     │
 │  ├── @CacheEvict on update/delete → refreshes cache    │
 │  └── Uses Ehcache as provider                          │
 └────────────────────────────────────────────────────────┘
@@ -681,19 +681,19 @@ All exceptions are handled globally via `@RestControllerAdvice` in `GlobalExcept
 
 ```
 Test Class (thin)                    Helper (logic)
-┌──────────────────────┐            ┌────────────────────────────┐
-│ @Test                │            │                            │
-│ @DisplayName("...")  │───calls───→│ Sets up mocks (when/then)  │
-│ void testName() {   │            │ Calls service method        │
-│   helper.scenario() │            │ Asserts results             │
-│ }                    │            │ Verifies interactions       │
-└──────────────────────┘            └────────────────────────────┘
+┌─────────────────────┐            ┌────────────────────────────┐
+│ @Test               │            │                            │
+│ @DisplayName("...") │───calls───→│ Sets up mocks (when/then)  │
+│ void testName() {   │            │ Calls service method       │
+│   helper.scenario() │            │ Asserts results            │
+│ }                   │            │ Verifies interactions      │
+└─────────────────────┘            └────────────────────────────┘
                                               │
                                     ┌─────────┴─────────┐
-                                    │  TestDataHelper    │
-                                    │  (shared factory)  │
-                                    │  createDoctor()    │
-                                    │  createPatient()   │
+                                    │  TestDataHelper   │
+                                    │  (shared factory) │
+                                    │  createDoctor()   │
+                                    │  createPatient()  │
                                     │  createAppointment()│
                                     └───────────────────┘
 ```
