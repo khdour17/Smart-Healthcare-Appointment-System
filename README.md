@@ -40,7 +40,7 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT (Postman)                      │
+│                        CLIENT (Postman)                     │
 └─────────────────────┬───────────────────────────────────────┘
                       │ HTTP Requests (JSON)
                       ▼
