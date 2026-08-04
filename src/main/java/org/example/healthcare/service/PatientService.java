@@ -69,6 +69,21 @@ public class PatientService {
             throw new DatabaseOperationException("Failed to delete patient with id: " + id, ex);
         }
     }
+    
+    // ==================== DELETE (bulk) ====================
+
+    @Transactional
+    public void deletePatients(List<Long> ids) {
+        try {
+            List<Patient> patientsToDelete = patientRepository.findAllById(ids);
+            if (patientsToDelete.size() != ids.size()) {
+                throw new ResourceNotFoundException("One or more patients not found for the given ids");
+            }
+            patientRepository.deleteAll(patientsToDelete);
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to delete patients with ids: " + ids, ex);
+        }
+    }
 
     // ==================== HELPER ====================
 

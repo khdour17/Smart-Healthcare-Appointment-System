@@ -51,4 +51,12 @@ public class DoctorController {
         doctorService.deleteDoctor(id);
         return ResponseEntity.ok(MessageResponse.builder().message("Doctor deleted successfully").build());
     }
+
+    // ==================== DELETE (Admin only, bulk) ====================
+
+    @DeleteMapping
+    public ResponseEntity<MessageResponse> deleteDoctors(@RequestBody List<Long> ids) {
+        doctorService.deleteDoctors(ids);
+        return ResponseEntity.ok(MessageResponse.builder().message("Doctors deleted successfully").build());
+    }
 }

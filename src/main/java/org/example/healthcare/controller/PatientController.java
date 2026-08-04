@@ -40,10 +40,18 @@ public class PatientController {
     }
 
     // ==================== DELETE (Admin only) ====================
-
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageResponse> deletePatient(@PathVariable Long id) {
         patientService.deletePatient(id);
         return ResponseEntity.ok(MessageResponse.builder().message("Patient deleted successfully").build());
+    }
+    
+    // ==================== DELETE (Admin only, bulk) ====================
+    
+    @DeleteMapping
+    public ResponseEntity<MessageResponse> deletePatients(@RequestBody List<Long> ids) {
+        patientService.deletePatients(ids);
+        return ResponseEntity.ok(MessageResponse.builder().message("Patients deleted successfully").build());
     }
 }

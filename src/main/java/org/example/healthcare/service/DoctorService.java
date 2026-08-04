@@ -96,6 +96,27 @@ public class DoctorService {
         }
     }
 
+    // ==================== DELETE (bulk, evicts cache) ====================
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "allDoctors", allEntries = true),
+            @CacheEvict(value = "doctorById", allEntries = true),
+            @CacheEvict(value = "doctorsBySpecialty", allEntries = true)
+    })
+    @LogDoctor(action = "DELETE_BULK", cacheAction = "EVICT")
+    public void deleteDoctors(List<Long> ids) {
+        try {
+            List<Doctor> doctorsToDelete = doctorRepository.findAllById(ids);
+            if (doctorsToDelete.size() != ids.size()) {
+                throw new ResourceNotFoundException("One or more doctors not found for the given ids");
+            }
+            doctorRepository.deleteAll(doctorsToDelete);
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to delete doctors with ids: " + ids, ex);
+        }
+    }
+
     // ==================== HELPER ====================
 
     private Doctor findDoctorOrThrow(Long id) {
