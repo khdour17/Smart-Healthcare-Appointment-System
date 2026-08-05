@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface DoctorAvailabilityRepository extends JpaRepository<DoctorAvailability, Long> {
     List<DoctorAvailability> findByDoctorId(Long doctorId);
     Optional<DoctorAvailability> findByDoctorIdAndDayOfWeek(Long doctorId, DayOfWeek dayOfWeek);
+    void deleteByDoctorIdIn(List<Long> doctorIds);
 }

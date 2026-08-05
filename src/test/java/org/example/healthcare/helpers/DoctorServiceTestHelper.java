@@ -5,7 +5,9 @@ import org.example.healthcare.dto.response.DoctorResponse;
 import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.DoctorMapper;
 import org.example.healthcare.models.sql.Doctor;
+import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
+import org.example.healthcare.repository.sql.UserRepository;
 import org.example.healthcare.service.DoctorService;
 
 import java.util.List;
@@ -22,10 +24,17 @@ public class DoctorServiceTestHelper {
 
     private final DoctorService doctorService;
     private final DoctorRepository doctorRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final UserRepository userRepository;
 
-    public DoctorServiceTestHelper(DoctorRepository doctorRepository, DoctorMapper doctorMapper) {
+    public DoctorServiceTestHelper(DoctorRepository doctorRepository,
+                                   DoctorAvailabilityRepository doctorAvailabilityRepository,
+                                   UserRepository userRepository,
+                                   DoctorMapper doctorMapper) {
         this.doctorRepository = doctorRepository;
-        this.doctorService = new DoctorService(doctorRepository, doctorMapper);
+        this.doctorAvailabilityRepository = doctorAvailabilityRepository;
+        this.userRepository = userRepository;
+        this.doctorService = new DoctorService(doctorRepository, doctorAvailabilityRepository, userRepository, doctorMapper);
     }
 
     // ── GET ALL ───────────────────────────────────────────────
@@ -129,8 +138,10 @@ public class DoctorServiceTestHelper {
         // Act
         doctorService.deleteDoctor(1L);
 
-        // Assert: delete was called with the correct doctor
+        // Assert: availability rows cleared, doctor deleted, and its login user removed too
+        verify(doctorAvailabilityRepository, times(1)).deleteByDoctorIdIn(List.of(1L));
         verify(doctorRepository, times(1)).delete(doctor);
+        verify(userRepository, times(1)).delete(doctor.getUser());
     }
 
     /** Verify deleteDoctor throws when doctor not found */

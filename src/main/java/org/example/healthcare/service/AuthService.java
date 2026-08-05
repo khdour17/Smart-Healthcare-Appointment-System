@@ -8,6 +8,7 @@ import org.example.healthcare.dto.response.JwtResponse;
 import org.example.healthcare.models.enums.Role;
 import org.example.healthcare.exception.DatabaseOperationException;
 import org.example.healthcare.exception.DuplicateResourceException;
+import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.models.sql.Admin;
 import org.example.healthcare.models.sql.Doctor;
 import org.example.healthcare.models.sql.Patient;
@@ -55,6 +56,8 @@ public class AuthService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
 
+        Long roleEntityId = resolveRoleEntityId(user);
+
         return JwtResponse.builder()
                 .token(token)
                 .type("Bearer")
@@ -62,9 +65,10 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .roleEntityId(roleEntityId)
                 .build();
     }
-
+    
     // ==================== REGISTER ADMIN ====================
 
     @Transactional
@@ -151,6 +155,24 @@ public class AuthService {
                     .build());
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to create user: " + username, ex);
+        }
+    }
+
+    private Long resolveRoleEntityId(User user) {
+        try {
+            return switch (user.getRole()) {
+                case ADMIN -> adminRepository.findByUserId(user.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Admin profile not found for user: " + user.getUsername()))
+                        .getId();
+                case DOCTOR -> doctorRepository.findByUserId(user.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Doctor profile not found for user: " + user.getUsername()))
+                        .getId();
+                case PATIENT -> patientRepository.findByUserId(user.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found for user: " + user.getUsername()))
+                        .getId();
+            };
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to resolve role profile id for user: " + user.getUsername(), ex);
         }
     }
 }

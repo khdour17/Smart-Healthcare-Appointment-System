@@ -6,6 +6,7 @@ import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.PatientMapper;
 import org.example.healthcare.models.sql.Patient;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.repository.sql.UserRepository;
 import org.example.healthcare.service.PatientService;
 
 import java.time.LocalDate;
@@ -22,10 +23,14 @@ public class PatientServiceTestHelper {
 
     private final PatientService patientService;
     private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
 
-    public PatientServiceTestHelper(PatientRepository patientRepository, PatientMapper patientMapper) {
+    public PatientServiceTestHelper(PatientRepository patientRepository,
+                                    UserRepository userRepository,
+                                    PatientMapper patientMapper) {
         this.patientRepository = patientRepository;
-        this.patientService = new PatientService(patientRepository, patientMapper);
+        this.userRepository = userRepository;
+        this.patientService = new PatientService(patientRepository, userRepository, patientMapper);
     }
 
     // ── GET ALL ───────────────────────────────────────────────
@@ -110,6 +115,7 @@ public class PatientServiceTestHelper {
         patientService.deletePatient(1L);
 
         verify(patientRepository, times(1)).delete(patient);
+        verify(userRepository, times(1)).delete(patient.getUser());
     }
 
     /** Verify deletePatient throws when not found */

@@ -7,7 +7,10 @@ import org.example.healthcare.exception.DatabaseOperationException;
 import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.DoctorMapper;
 import org.example.healthcare.models.sql.Doctor;
+import org.example.healthcare.models.sql.User;
+import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
+import org.example.healthcare.repository.sql.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,6 +28,8 @@ import java.util.stream.Collectors;
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final UserRepository userRepository;
     private final DoctorMapper doctorMapper;
 
     // ==================== GET ====================
@@ -89,8 +95,15 @@ public class DoctorService {
     @LogDoctor(action = "DELETE", cacheAction = "EVICT")
     public void deleteDoctor(Long id) {
         Doctor doctor = findDoctorOrThrow(id);
+        User user = doctor.getUser();
         try {
+            doctorAvailabilityRepository.deleteByDoctorIdIn(List.of(id));
             doctorRepository.delete(doctor);
+            // Flush so the doctor row is gone before its users row is removed (FK: doctors.user_id -> users.id)
+            doctorRepository.flush();
+            if (user != null) {
+                userRepository.delete(user);
+            }
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to delete doctor with id: " + id, ex);
         }
@@ -111,7 +124,15 @@ public class DoctorService {
             if (doctorsToDelete.size() != ids.size()) {
                 throw new ResourceNotFoundException("One or more doctors not found for the given ids");
             }
+            List<User> usersToDelete = doctorsToDelete.stream()
+                    .map(Doctor::getUser)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            doctorAvailabilityRepository.deleteByDoctorIdIn(ids);
             doctorRepository.deleteAll(doctorsToDelete);
+            // Flush so the doctor rows are gone before their users rows are removed (FK: doctors.user_id -> users.id)
+            doctorRepository.flush();
+            userRepository.deleteAll(usersToDelete);
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to delete doctors with ids: " + ids, ex);
         }

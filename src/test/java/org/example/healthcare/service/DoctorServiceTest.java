@@ -2,7 +2,9 @@ package org.example.healthcare.service;
 
 import org.example.healthcare.helpers.DoctorServiceTestHelper;
 import org.example.healthcare.mapper.DoctorMapper;
+import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
+import org.example.healthcare.repository.sql.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,12 +18,18 @@ class DoctorServiceTest {
     @Mock // Creates a fake DoctorRepository (no real DB)
     private DoctorRepository doctorRepository;
 
+    @Mock // Fake availability repository — deleteDoctor(s) clears availability rows first
+    private DoctorAvailabilityRepository doctorAvailabilityRepository;
+
+    @Mock // Fake user repository — deleteDoctor(s) also removes the linked users row
+    private UserRepository userRepository;
+
     private DoctorServiceTestHelper helper;
 
     @BeforeEach
     void setUp() {
         // Real mapper (no logic to mock), fake repository
-        helper = new DoctorServiceTestHelper(doctorRepository, new DoctorMapper());
+        helper = new DoctorServiceTestHelper(doctorRepository, doctorAvailabilityRepository, userRepository, new DoctorMapper());
     }
 
     @Test
