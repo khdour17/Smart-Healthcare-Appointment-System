@@ -109,6 +109,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, APPOINTMENT_COMPLETE).hasAuthority(DOCTOR)
                         .requestMatchers(HttpMethod.POST, APPOINTMENT_BOOK).hasAuthority(PATIENT)
                         .requestMatchers(HttpMethod.PATCH, APPOINTMENT_CANCEL).hasAuthority(PATIENT)
+                        .requestMatchers(HttpMethod.DELETE, APPOINTMENTS_API).hasAnyAuthority(PATIENT, ADMIN)
                         .requestMatchers(HttpMethod.GET, APPOINTMENTS_API).authenticated()
 
                         // ── PRESCRIPTIONS: write = doctor, read = doctor+patient

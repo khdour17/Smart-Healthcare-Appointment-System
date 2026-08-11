@@ -66,6 +66,14 @@ public class AppointmentController {
         return ResponseEntity.ok(MessageResponse.builder().message("Appointment cancelled successfully").build());
     }
 
+    // ==================== DELETE (Patient, Admin) ====================
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<MessageResponse> deleteAppointment(@PathVariable Long id) {
+        appointmentService.deleteAppointment(id);
+        return ResponseEntity.ok(MessageResponse.builder().message("Appointment deleted successfully").build());
+    }
+
     // ==================== COMPLETE (Doctor) ====================
 
     @PatchMapping("/{id}/complete")

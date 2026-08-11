@@ -37,6 +37,12 @@ public class GlobalExceptionHandler {
                 .body(MessageResponse.builder().message(ex.getMessage()).build());
     }
 
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<MessageResponse> handleForbiddenOperation(ForbiddenOperationException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(MessageResponse.builder().message(ex.getMessage()).build());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<MessageResponse> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

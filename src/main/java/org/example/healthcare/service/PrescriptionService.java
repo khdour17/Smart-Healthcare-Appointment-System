@@ -6,6 +6,7 @@ import org.example.healthcare.dto.response.PrescriptionResponse;
 import org.example.healthcare.exception.DatabaseOperationException;
 import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.PrescriptionMapper;
+import org.example.healthcare.models.enums.AppointmentStatus;
 import org.example.healthcare.models.nosql.Prescription;
 import org.example.healthcare.models.sql.Appointment;
 import org.example.healthcare.repository.nosql.PrescriptionRepository;
@@ -40,6 +41,10 @@ public class PrescriptionService {
                             "Appointment not found with id: " + request.getAppointmentId()));
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to fetch appointment with id: " + request.getAppointmentId(), ex);
+        }
+
+        if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
+            throw new IllegalArgumentException("Prescriptions can only be added to completed appointments");
         }
 
         Prescription prescription = Prescription.builder()
