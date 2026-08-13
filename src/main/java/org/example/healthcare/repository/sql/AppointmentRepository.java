@@ -20,6 +20,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long>{
 
     List<Appointment> findByDoctorIdAndStatus(Long doctorId, AppointmentStatus status);
 
+    void deleteByDoctorIdIn(List<Long> doctorIds);
+
+    void deleteByPatientIdIn(List<Long> patientIds);
+
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId " +
             "AND a.appointmentDate = :date " +
             "AND a.status != 'CANCELLED' " +

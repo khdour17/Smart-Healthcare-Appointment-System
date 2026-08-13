@@ -5,6 +5,7 @@ import org.example.healthcare.dto.response.PatientResponse;
 import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.PatientMapper;
 import org.example.healthcare.models.sql.Patient;
+import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
 import org.example.healthcare.repository.sql.UserRepository;
 import org.example.healthcare.service.PatientService;
@@ -26,11 +27,12 @@ public class PatientServiceTestHelper {
     private final UserRepository userRepository;
 
     public PatientServiceTestHelper(PatientRepository patientRepository,
+                                    AppointmentRepository appointmentRepository,
                                     UserRepository userRepository,
                                     PatientMapper patientMapper) {
         this.patientRepository = patientRepository;
         this.userRepository = userRepository;
-        this.patientService = new PatientService(patientRepository, userRepository, patientMapper);
+        this.patientService = new PatientService(patientRepository, appointmentRepository, userRepository, patientMapper);
     }
 
     // ── GET ALL ───────────────────────────────────────────────

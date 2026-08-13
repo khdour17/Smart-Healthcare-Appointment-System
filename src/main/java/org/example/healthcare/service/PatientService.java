@@ -7,6 +7,7 @@ import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.PatientMapper;
 import org.example.healthcare.models.sql.Patient;
 import org.example.healthcare.models.sql.User;
+import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
 import org.example.healthcare.repository.sql.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final PatientMapper patientMapper;
 
@@ -69,6 +71,7 @@ public class PatientService {
         Patient patient = findPatientOrThrow(id);
         User user = patient.getUser();
         try {
+            appointmentRepository.deleteByPatientIdIn(List.of(id));
             patientRepository.delete(patient);
             // Flush so the patient row is gone before its users row is removed (FK: patients.user_id -> users.id)
             patientRepository.flush();
@@ -93,6 +96,7 @@ public class PatientService {
                     .map(Patient::getUser)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+            appointmentRepository.deleteByPatientIdIn(ids);
             patientRepository.deleteAll(patientsToDelete);
             // Flush so the patient rows are gone before their users rows are removed (FK: patients.user_id -> users.id)
             patientRepository.flush();

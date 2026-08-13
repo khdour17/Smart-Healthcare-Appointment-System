@@ -11,6 +11,7 @@ import org.example.healthcare.models.nosql.Prescription;
 import org.example.healthcare.models.sql.Appointment;
 import org.example.healthcare.repository.nosql.PrescriptionRepository;
 import org.example.healthcare.repository.sql.AppointmentRepository;
+import org.example.healthcare.security.CallerGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final AppointmentRepository appointmentRepository;
     private final PrescriptionMapper prescriptionMapper;
+    private final CallerGuard callerGuard;
 
     // ==================== CREATE (Doctor) ====================
 
@@ -80,17 +82,21 @@ public class PrescriptionService {
     }
 
     public PrescriptionResponse getPrescriptionByAppointmentId(Long appointmentId) {
+        Prescription prescription;
         try {
-            Prescription prescription = prescriptionRepository.findByAppointmentId(appointmentId)
+            prescription = prescriptionRepository.findByAppointmentId(appointmentId)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Prescription not found for appointment: " + appointmentId));
-            return prescriptionMapper.toResponse(prescription);
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to fetch prescription for appointment id: " + appointmentId, ex);
         }
+
+        callerGuard.assertPatientOwns(prescription.getPatientId());
+        return prescriptionMapper.toResponse(prescription);
     }
 
     public List<PrescriptionResponse> getPatientPrescriptions(Long patientId) {
+        callerGuard.assertPatientOwns(patientId);
         try {
             return prescriptionRepository.findByPatientId(patientId).stream()
                     .map(prescriptionMapper::toResponse)

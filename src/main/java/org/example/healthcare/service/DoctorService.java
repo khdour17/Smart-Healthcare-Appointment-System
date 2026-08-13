@@ -8,6 +8,7 @@ import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.DoctorMapper;
 import org.example.healthcare.models.sql.Doctor;
 import org.example.healthcare.models.sql.User;
+import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.UserRepository;
@@ -29,6 +30,7 @@ public class DoctorService {
 
     private final DoctorRepository doctorRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
     private final DoctorMapper doctorMapper;
 
@@ -97,6 +99,7 @@ public class DoctorService {
         Doctor doctor = findDoctorOrThrow(id);
         User user = doctor.getUser();
         try {
+            appointmentRepository.deleteByDoctorIdIn(List.of(id));
             doctorAvailabilityRepository.deleteByDoctorIdIn(List.of(id));
             doctorRepository.delete(doctor);
             // Flush so the doctor row is gone before its users row is removed (FK: doctors.user_id -> users.id)
@@ -128,6 +131,7 @@ public class DoctorService {
                     .map(Doctor::getUser)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+            appointmentRepository.deleteByDoctorIdIn(ids);
             doctorAvailabilityRepository.deleteByDoctorIdIn(ids);
             doctorRepository.deleteAll(doctorsToDelete);
             // Flush so the doctor rows are gone before their users rows are removed (FK: doctors.user_id -> users.id)

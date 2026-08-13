@@ -2,6 +2,7 @@ package org.example.healthcare.service;
 
 import org.example.healthcare.helpers.DoctorServiceTestHelper;
 import org.example.healthcare.mapper.DoctorMapper;
+import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.UserRepository;
@@ -24,12 +25,15 @@ class DoctorServiceTest {
     @Mock // Fake user repository — deleteDoctor(s) also removes the linked users row
     private UserRepository userRepository;
 
+    @Mock // deleteDoctor(s) clears the doctor's appointments first
+    private AppointmentRepository appointmentRepository;
+
     private DoctorServiceTestHelper helper;
 
     @BeforeEach
     void setUp() {
         // Real mapper (no logic to mock), fake repository
-        helper = new DoctorServiceTestHelper(doctorRepository, doctorAvailabilityRepository, userRepository, new DoctorMapper());
+        helper = new DoctorServiceTestHelper(doctorRepository, doctorAvailabilityRepository, appointmentRepository, userRepository, new DoctorMapper());
     }
 
     @Test

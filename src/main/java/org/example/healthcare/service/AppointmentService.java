@@ -7,11 +7,8 @@ import org.example.healthcare.dto.response.AvailableSlotResponse;
 import org.example.healthcare.models.enums.AppointmentStatus;
 import org.example.healthcare.exception.DatabaseOperationException;
 import org.example.healthcare.exception.DoubleBookingException;
-import org.example.healthcare.exception.ForbiddenOperationException;
 import org.example.healthcare.exception.ResourceNotFoundException;
-import org.example.healthcare.models.enums.Role;
-import org.example.healthcare.models.sql.User;
-import org.example.healthcare.security.CustomUserDetails;
+import org.example.healthcare.security.CallerGuard;
 import org.example.healthcare.mapper.AppointmentMapper;
 import org.example.healthcare.models.sql.Appointment;
 import org.example.healthcare.models.sql.Doctor;
@@ -23,8 +20,6 @@ import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +38,7 @@ public class AppointmentService {
     private final DoctorRepository doctorRepository;
     private final DoctorAvailabilityRepository availabilityRepository;
     private final AppointmentMapper appointmentMapper;
+    private final CallerGuard callerGuard;
 
     // ==================== BOOK ====================
 
@@ -141,7 +137,7 @@ public class AppointmentService {
     @LogAppointment(action = "CANCEL")
     public void cancelAppointment(Long appointmentId) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
-        assertOwnedByCallerIfPatient(appointment);
+        callerGuard.assertPatientOwns(appointment.getPatient().getId());
 
         if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
             throw new IllegalArgumentException("Only scheduled appointments can be cancelled");
@@ -182,7 +178,7 @@ public class AppointmentService {
     @LogAppointment(action = "DELETE")
     public void deleteAppointment(Long appointmentId) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
-        assertOwnedByCallerIfPatient(appointment);
+        callerGuard.assertPatientOwns(appointment.getPatient().getId());
 
         if (appointment.getStatus() != AppointmentStatus.CANCELLED) {
             throw new IllegalArgumentException("Only cancelled appointments can be deleted");
@@ -225,30 +221,6 @@ public class AppointmentService {
     }
 
     // ==================== HELPERS ====================
-
-    /**
-     * Endpoint authorization only proves the caller holds a role, not that the appointment is theirs.
-     * Without this any patient could cancel or delete another patient's appointment by guessing an id.
-     */
-    private void assertOwnedByCallerIfPatient(Appointment appointment) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
-            throw new ForbiddenOperationException("Could not identify the current user");
-        }
-
-        User user = userDetails.getUser();
-        if (user.getRole() != Role.PATIENT) {
-            return;
-        }
-
-        Long callerPatientId = patientRepository.findByUserId(user.getId())
-                .map(Patient::getId)
-                .orElseThrow(() -> new ForbiddenOperationException("No patient profile found for the current user"));
-
-        if (!callerPatientId.equals(appointment.getPatient().getId())) {
-            throw new ForbiddenOperationException("You can only manage your own appointments");
-        }
-    }
 
     private Appointment findAppointmentOrThrow(Long id) {
         try {

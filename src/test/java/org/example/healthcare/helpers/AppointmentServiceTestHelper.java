@@ -11,6 +11,7 @@ import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.example.healthcare.service.AppointmentService;
 
 import java.time.DayOfWeek;
@@ -47,7 +48,8 @@ public class AppointmentServiceTestHelper {
             PatientRepository patientRepository,
             DoctorRepository doctorRepository,
             DoctorAvailabilityRepository availabilityRepository,
-            AppointmentMapper appointmentMapper) {
+            AppointmentMapper appointmentMapper,
+            CallerGuard callerGuard) {
 
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
@@ -55,7 +57,7 @@ public class AppointmentServiceTestHelper {
         this.availabilityRepository = availabilityRepository;
         this.appointmentService = new AppointmentService(
                 appointmentRepository, patientRepository, doctorRepository,
-                availabilityRepository, appointmentMapper);
+                availabilityRepository, appointmentMapper, callerGuard);
     }
 
     // ── BOOKING SUCCESS ───────────────────────────────────────

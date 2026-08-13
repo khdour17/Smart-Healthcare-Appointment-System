@@ -2,6 +2,7 @@ package org.example.healthcare.service;
 
 import org.example.healthcare.helpers.PatientServiceTestHelper;
 import org.example.healthcare.mapper.PatientMapper;
+import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
 import org.example.healthcare.repository.sql.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,11 +21,14 @@ class PatientServiceTest {
     @Mock // deletePatient(s) also removes the linked users row
     private UserRepository userRepository;
 
+    @Mock // deletePatient(s) clears the patient's appointments first
+    private AppointmentRepository appointmentRepository;
+
     private PatientServiceTestHelper helper;
 
     @BeforeEach
     void setUp() {
-        helper = new PatientServiceTestHelper(patientRepository, userRepository, new PatientMapper());
+        helper = new PatientServiceTestHelper(patientRepository, appointmentRepository, userRepository, new PatientMapper());
     }
 
     @Test

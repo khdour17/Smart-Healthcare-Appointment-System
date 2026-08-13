@@ -6,6 +6,7 @@ import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +22,7 @@ class AppointmentServiceTest {
     @Mock private PatientRepository patientRepository;
     @Mock private DoctorRepository doctorRepository;
     @Mock private DoctorAvailabilityRepository availabilityRepository;
+    @Mock private CallerGuard callerGuard;
 
     private AppointmentServiceTestHelper helper;
 
@@ -28,7 +30,7 @@ class AppointmentServiceTest {
     void setUp() {
         helper = new AppointmentServiceTestHelper(
                 appointmentRepository, patientRepository, doctorRepository,
-                availabilityRepository, new AppointmentMapper());
+                availabilityRepository, new AppointmentMapper(), callerGuard);
     }
 
     // ── Group related tests with @Nested for readability ──
