@@ -9,6 +9,7 @@ import org.example.healthcare.models.sql.Doctor;
 import org.example.healthcare.models.sql.DoctorAvailability;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
+import org.example.healthcare.security.CallerGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -24,11 +25,13 @@ public class DoctorAvailabilityService {
     private final DoctorAvailabilityRepository availabilityRepository;
     private final DoctorRepository doctorRepository;
     private final DoctorAvailabilityMapper availabilityMapper;
+    private final CallerGuard callerGuard;
 
     // ==================== SET AVAILABILITY (Doctor sets own) ====================
 
     @Transactional
     public DoctorAvailabilityResponse setAvailability(Long doctorId, DoctorAvailabilityRequest request) {
+        callerGuard.assertDoctorOwns(doctorId);
         Doctor doctor = findDoctorOrThrow(doctorId);
 
         DoctorAvailability availability;
@@ -74,11 +77,18 @@ public class DoctorAvailabilityService {
 
     @Transactional
     public void deleteAvailability(Long id) {
+        DoctorAvailability availability;
         try {
-            if (!availabilityRepository.existsById(id)) {
-                throw new ResourceNotFoundException("Availability not found with id: " + id);
-            }
-            availabilityRepository.deleteById(id);
+            availability = availabilityRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Availability not found with id: " + id));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch availability with id: " + id, ex);
+        }
+
+        callerGuard.assertDoctorOwns(availability.getDoctor().getId());
+
+        try {
+            availabilityRepository.delete(availability);
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to delete availability with id: " + id, ex);
         }

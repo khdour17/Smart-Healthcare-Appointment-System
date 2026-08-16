@@ -157,6 +157,7 @@ public class AppointmentService {
     @LogAppointment(action = "COMPLETE")
     public AppointmentResponse completeAppointment(Long appointmentId, String notes) {
         Appointment appointment = findAppointmentOrThrow(appointmentId);
+        callerGuard.assertDoctorOwns(appointment.getDoctor().getId());
 
         if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
             throw new IllegalArgumentException("Only scheduled appointments can be completed");
@@ -195,11 +196,14 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public AppointmentResponse getAppointmentById(Long id) {
-        return appointmentMapper.toResponse(findAppointmentOrThrow(id));
+        Appointment appointment = findAppointmentOrThrow(id);
+        callerGuard.assertParticipant(appointment.getPatient().getId(), appointment.getDoctor().getId());
+        return appointmentMapper.toResponse(appointment);
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getPatientAppointments(Long patientId) {
+        callerGuard.assertPatientOwns(patientId);
         try {
             return appointmentRepository.findByPatientId(patientId).stream()
                     .map(appointmentMapper::toResponse)
@@ -211,6 +215,7 @@ public class AppointmentService {
 
     @Transactional(readOnly = true)
     public List<AppointmentResponse> getDoctorAppointments(Long doctorId) {
+        callerGuard.assertDoctorOwns(doctorId);
         try {
             return appointmentRepository.findByDoctorId(doctorId).stream()
                     .map(appointmentMapper::toResponse)

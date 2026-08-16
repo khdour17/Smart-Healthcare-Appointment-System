@@ -45,6 +45,8 @@ public class PrescriptionService {
             throw new DatabaseOperationException("Failed to fetch appointment with id: " + request.getAppointmentId(), ex);
         }
 
+        callerGuard.assertDoctorOwns(appointment.getDoctor().getId());
+
         if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
             throw new IllegalArgumentException("Prescriptions can only be added to completed appointments");
         }
@@ -72,13 +74,9 @@ public class PrescriptionService {
     // ==================== GET ====================
 
     public PrescriptionResponse getPrescriptionById(String id) {
-        try {
-            Prescription prescription = prescriptionRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));
-            return prescriptionMapper.toResponse(prescription);
-        } catch (DataAccessException ex) {
-            throw new DatabaseOperationException("Failed to fetch prescription with id: " + id, ex);
-        }
+        Prescription prescription = findPrescriptionOrThrow(id);
+        callerGuard.assertParticipant(prescription.getPatientId(), prescription.getDoctorId());
+        return prescriptionMapper.toResponse(prescription);
     }
 
     public PrescriptionResponse getPrescriptionByAppointmentId(Long appointmentId) {
@@ -91,7 +89,7 @@ public class PrescriptionService {
             throw new DatabaseOperationException("Failed to fetch prescription for appointment id: " + appointmentId, ex);
         }
 
-        callerGuard.assertPatientOwns(prescription.getPatientId());
+        callerGuard.assertParticipant(prescription.getPatientId(), prescription.getDoctorId());
         return prescriptionMapper.toResponse(prescription);
     }
 
@@ -107,6 +105,7 @@ public class PrescriptionService {
     }
 
     public List<PrescriptionResponse> getDoctorPrescriptions(Long doctorId) {
+        callerGuard.assertDoctorOwns(doctorId);
         try {
             return prescriptionRepository.findByDoctorId(doctorId).stream()
                     .map(prescriptionMapper::toResponse)
@@ -116,18 +115,22 @@ public class PrescriptionService {
         }
     }
 
+    private Prescription findPrescriptionOrThrow(String id) {
+        try {
+            return prescriptionRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch prescription with id: " + id, ex);
+        }
+    }
+
     // ==================== UPDATE (Doctor) ====================
 
     @Transactional
     @LogPrescription(action = "UPDATE")
     public PrescriptionResponse updatePrescription(String id, PrescriptionRequest request) {
-        Prescription prescription;
-        try {
-            prescription = prescriptionRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with id: " + id));
-        } catch (DataAccessException ex) {
-            throw new DatabaseOperationException("Failed to fetch prescription with id: " + id, ex);
-        }
+        Prescription prescription = findPrescriptionOrThrow(id);
+        callerGuard.assertDoctorOwns(prescription.getDoctorId());
 
         prescription.setMedicines(request.getMedicines());
         prescription.setDiagnosis(request.getDiagnosis());
