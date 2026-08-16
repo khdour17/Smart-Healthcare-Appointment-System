@@ -9,6 +9,7 @@ import org.example.healthcare.models.nosql.MedicalRecord;
 import org.example.healthcare.models.sql.Patient;
 import org.example.healthcare.repository.nosql.MedicalRecordRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.security.CallerGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class MedicalRecordService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final PatientRepository patientRepository;
     private final MedicalRecordMapper medicalRecordMapper;
+    private final CallerGuard callerGuard;
 
     // ==================== CREATE (Doctor) ====================
 
@@ -60,16 +62,20 @@ public class MedicalRecordService {
     // ==================== GET ====================
 
     public MedicalRecordResponse getMedicalRecordById(String id) {
+        MedicalRecord record;
         try {
-            MedicalRecord record = medicalRecordRepository.findById(id)
+            record = medicalRecordRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Medical record not found with id: " + id));
-            return medicalRecordMapper.toResponse(record);
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to fetch medical record with id: " + id, ex);
         }
+
+        callerGuard.assertPatientOwns(record.getPatientId());
+        return medicalRecordMapper.toResponse(record);
     }
 
     public List<MedicalRecordResponse> getPatientMedicalRecords(Long patientId) {
+        callerGuard.assertPatientOwns(patientId);
         try {
             return medicalRecordRepository.findByPatientIdOrderByRecordDateDesc(patientId).stream()
                     .map(medicalRecordMapper::toResponse)
