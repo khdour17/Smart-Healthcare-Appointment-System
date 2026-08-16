@@ -51,6 +51,12 @@ public class PrescriptionService {
             throw new IllegalArgumentException("Prescriptions can only be added to completed appointments");
         }
 
+        // findByAppointmentId returns an Optional, so a second prescription would make every
+        // later read of this appointment fail rather than just returning the wrong one.
+        prescriptionRepository.findByAppointmentId(appointment.getId()).ifPresent(existing -> {
+            throw new IllegalArgumentException("This appointment already has a prescription");
+        });
+
         Prescription prescription = Prescription.builder()
                 .appointmentId(appointment.getId())
                 .patientId(appointment.getPatient().getId())
