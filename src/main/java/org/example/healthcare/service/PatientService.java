@@ -9,6 +9,7 @@ import org.example.healthcare.models.sql.Patient;
 import org.example.healthcare.models.sql.User;
 import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.example.healthcare.repository.sql.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -26,6 +27,7 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
+    private final CallerGuard callerGuard;
     private final PatientMapper patientMapper;
 
     // ==================== GET ====================
@@ -50,6 +52,7 @@ public class PatientService {
     @Transactional
     public PatientResponse updatePatient(Long id, PatientRequest request) {
         Patient patient = findPatientOrThrow(id);
+        callerGuard.assertPatientOwns(id);
 
         patient.setName(request.getName());
         patient.setDateOfBirth(request.getDateOfBirth());

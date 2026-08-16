@@ -4,6 +4,7 @@ import org.example.healthcare.helpers.PatientServiceTestHelper;
 import org.example.healthcare.mapper.PatientMapper;
 import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.example.healthcare.repository.sql.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,11 +25,14 @@ class PatientServiceTest {
     @Mock // deletePatient(s) clears the patient's appointments first
     private AppointmentRepository appointmentRepository;
 
+    @Mock // updatePatient checks the caller owns the record
+    private CallerGuard callerGuard;
+
     private PatientServiceTestHelper helper;
 
     @BeforeEach
     void setUp() {
-        helper = new PatientServiceTestHelper(patientRepository, appointmentRepository, userRepository, new PatientMapper());
+        helper = new PatientServiceTestHelper(patientRepository, appointmentRepository, userRepository, callerGuard, new PatientMapper());
     }
 
     @Test

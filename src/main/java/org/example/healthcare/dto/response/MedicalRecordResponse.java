@@ -6,8 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.List;
 
+/** A single dated entry in a patient's history. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,10 +15,10 @@ import java.util.List;
 public class MedicalRecordResponse {
 
     private String id;
+    private Long patientId;
     private String patientName;
+    private String doctorName;
     private LocalDate recordDate;
     private String title;
     private String description;
-    private List<String> prescriptionIds;
-    private List<String> labReports;
 }

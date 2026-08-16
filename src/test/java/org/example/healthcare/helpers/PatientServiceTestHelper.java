@@ -7,6 +7,7 @@ import org.example.healthcare.mapper.PatientMapper;
 import org.example.healthcare.models.sql.Patient;
 import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.PatientRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.example.healthcare.repository.sql.UserRepository;
 import org.example.healthcare.service.PatientService;
 
@@ -29,10 +30,11 @@ public class PatientServiceTestHelper {
     public PatientServiceTestHelper(PatientRepository patientRepository,
                                     AppointmentRepository appointmentRepository,
                                     UserRepository userRepository,
+                                    CallerGuard callerGuard,
                                     PatientMapper patientMapper) {
         this.patientRepository = patientRepository;
         this.userRepository = userRepository;
-        this.patientService = new PatientService(patientRepository, appointmentRepository, userRepository, patientMapper);
+        this.patientService = new PatientService(patientRepository, appointmentRepository, userRepository, callerGuard, patientMapper);
     }
 
     // ── GET ALL ───────────────────────────────────────────────

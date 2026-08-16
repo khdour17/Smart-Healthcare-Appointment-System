@@ -67,6 +67,11 @@ public class CallerGuard {
         }
     }
 
+    /** The doctor making the request, for stamping authorship on what they create. */
+    public Long currentDoctorId() {
+        return callerDoctorId(currentUser());
+    }
+
     private User currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {

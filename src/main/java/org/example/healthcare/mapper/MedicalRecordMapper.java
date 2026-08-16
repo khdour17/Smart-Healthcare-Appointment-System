@@ -10,12 +10,12 @@ public class MedicalRecordMapper {
     public MedicalRecordResponse toResponse(MedicalRecord record) {
         return MedicalRecordResponse.builder()
                 .id(record.getId())
+                .patientId(record.getPatientId())
                 .patientName(record.getPatientName())
+                .doctorName(record.getDoctorName())
                 .recordDate(record.getRecordDate())
                 .title(record.getTitle())
                 .description(record.getDescription())
-                .prescriptionIds(record.getPrescriptionIds())
-                .labReports(record.getLabReports())
                 .build();
     }
 }

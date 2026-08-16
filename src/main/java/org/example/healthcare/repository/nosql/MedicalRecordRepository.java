@@ -9,4 +9,6 @@ public interface MedicalRecordRepository extends MongoRepository<MedicalRecord, 
     List<MedicalRecord> findByPatientId(Long patientId);
 
     List<MedicalRecord> findByPatientIdOrderByRecordDateDesc(Long patientId);
+
+    List<MedicalRecord> findByDoctorIdOrderByRecordDateDesc(Long doctorId);
 }

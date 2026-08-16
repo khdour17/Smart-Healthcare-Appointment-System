@@ -3,14 +3,13 @@ package org.example.healthcare.controller;
 import org.example.healthcare.dto.request.MedicalRecordRequest;
 import org.example.healthcare.dto.response.MedicalRecordResponse;
 import org.example.healthcare.dto.response.MessageResponse;
+import org.example.healthcare.dto.response.PatientHistoryResponse;
 import org.example.healthcare.service.MedicalRecordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/medical-records")
@@ -35,9 +34,10 @@ public class MedicalRecordController {
         return ResponseEntity.ok(medicalRecordService.getMedicalRecordById(id));
     }
 
+    /** The patient's whole record: entries, appointments and prescriptions. */
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<List<MedicalRecordResponse>> getPatientMedicalRecords(@PathVariable Long patientId) {
-        return ResponseEntity.ok(medicalRecordService.getPatientMedicalRecords(patientId));
+    public ResponseEntity<PatientHistoryResponse> getPatientHistory(@PathVariable Long patientId) {
+        return ResponseEntity.ok(medicalRecordService.getPatientHistory(patientId));
     }
 
     // ==================== UPDATE (Doctor) ====================

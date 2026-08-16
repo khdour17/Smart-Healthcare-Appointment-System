@@ -10,9 +10,13 @@ import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
+/**
+ * One dated entry in a patient's history — a diagnosis, an allergy, a chronic condition.
+ * Entries belong to the patient rather than to a single visit, so they can be written at
+ * any time. The patient's full record is these entries plus their appointments and
+ * prescriptions, assembled in MedicalRecordService.
+ */
 @Document(collection = "medical_records")
 @Data
 @NoArgsConstructor
@@ -26,6 +30,10 @@ public class MedicalRecord {
     @Indexed
     private Long patientId;
 
+    @Indexed
+    private Long doctorId;
+
+    private String doctorName;
     private String patientName;
 
     private LocalDate recordDate;
@@ -34,14 +42,6 @@ public class MedicalRecord {
 
     @Field("description")
     private String description;
-
-    @Field("prescription_ids")
-    @Builder.Default
-    private List<String> prescriptionIds = new ArrayList<>();
-
-    @Field("lab_reports")
-    @Builder.Default
-    private List<String> labReports = new ArrayList<>();
 
     @CreatedDate
     private LocalDateTime createdAt;

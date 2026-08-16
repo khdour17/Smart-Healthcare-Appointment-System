@@ -7,10 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,17 +16,8 @@ public class MedicalRecordRequest {
     @NotNull(message = "Patient ID is required")
     private Long patientId;
 
-    @NotNull(message = "Record date is required")
-    private LocalDate recordDate;
-
     @NotBlank(message = "Title is required")
     private String title;
 
     private String description;
-
-    @Builder.Default
-    private List<String> prescriptionIds = new ArrayList<>();
-
-    @Builder.Default
-    private List<String> labReports = new ArrayList<>();
 }
