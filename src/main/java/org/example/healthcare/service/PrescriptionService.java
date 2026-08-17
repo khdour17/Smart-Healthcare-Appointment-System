@@ -51,8 +51,6 @@ public class PrescriptionService {
             throw new IllegalArgumentException("Prescriptions can only be added to completed appointments");
         }
 
-        // findByAppointmentId returns an Optional, so a second prescription would make every
-        // later read of this appointment fail rather than just returning the wrong one.
         prescriptionRepository.findByAppointmentId(appointment.getId()).ifPresent(existing -> {
             throw new IllegalArgumentException("This appointment already has a prescription");
         });
@@ -64,6 +62,7 @@ public class PrescriptionService {
                 .doctorId(appointment.getDoctor().getId())
                 .doctorName(appointment.getDoctor().getName())
                 .prescriptionDate(LocalDate.now())
+                .appointmentDate(appointment.getAppointmentDate())
                 .medicines(request.getMedicines())
                 .diagnosis(request.getDiagnosis())
                 .instructions(request.getInstructions())
@@ -147,6 +146,21 @@ public class PrescriptionService {
             return prescriptionMapper.toResponse(updated);
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to update prescription with id: " + id, ex);
+        }
+    }
+
+    // ==================== DELETE (Doctor) ====================
+
+    @Transactional
+    @LogPrescription(action = "DELETE")
+    public void deletePrescription(String id) {
+        Prescription prescription = findPrescriptionOrThrow(id);
+        callerGuard.assertDoctorOwns(prescription.getDoctorId());
+
+        try {
+            prescriptionRepository.delete(prescription);
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to delete prescription with id: " + id, ex);
         }
     }
 }

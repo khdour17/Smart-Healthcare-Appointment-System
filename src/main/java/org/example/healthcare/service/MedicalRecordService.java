@@ -68,7 +68,6 @@ public class MedicalRecordService {
 
     // ==================== GET ====================
 
-    /** The patient's whole record: entries a doctor wrote, plus their appointments and prescriptions. */
     public PatientHistoryResponse getPatientHistory(Long patientId) {
         callerGuard.assertPatientOwns(patientId);
         Patient patient = findPatientOrThrow(patientId);

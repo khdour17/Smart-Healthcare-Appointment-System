@@ -34,7 +34,6 @@ public class MedicalRecordController {
         return ResponseEntity.ok(medicalRecordService.getMedicalRecordById(id));
     }
 
-    /** The patient's whole record: entries, appointments and prescriptions. */
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<PatientHistoryResponse> getPatientHistory(@PathVariable Long patientId) {
         return ResponseEntity.ok(medicalRecordService.getPatientHistory(patientId));

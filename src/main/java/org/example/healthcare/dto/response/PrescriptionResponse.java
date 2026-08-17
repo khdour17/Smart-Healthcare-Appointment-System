@@ -19,6 +19,7 @@ public class PrescriptionResponse {
     private String patientName;
     private String doctorName;
     private LocalDate prescriptionDate;
+    private LocalDate appointmentDate;
     private List<String> medicines;
     private String diagnosis;
     private String instructions;

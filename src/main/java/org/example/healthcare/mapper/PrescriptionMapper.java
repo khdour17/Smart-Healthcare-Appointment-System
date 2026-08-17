@@ -14,6 +14,7 @@ public class PrescriptionMapper {
                 .patientName(prescription.getPatientName())
                 .doctorName(prescription.getDoctorName())
                 .prescriptionDate(prescription.getPrescriptionDate())
+                .appointmentDate(prescription.getAppointmentDate())
                 .medicines(prescription.getMedicines())
                 .diagnosis(prescription.getDiagnosis())
                 .instructions(prescription.getInstructions())

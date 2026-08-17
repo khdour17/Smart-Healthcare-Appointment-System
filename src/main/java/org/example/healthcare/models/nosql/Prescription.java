@@ -37,6 +37,8 @@ public class Prescription {
 
     private LocalDate prescriptionDate;
 
+    private LocalDate appointmentDate;
+
     @Builder.Default
     private List<String> medicines = new ArrayList<>();
 

@@ -11,12 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * One dated entry in a patient's history — a diagnosis, an allergy, a chronic condition.
- * Entries belong to the patient rather than to a single visit, so they can be written at
- * any time. The patient's full record is these entries plus their appointments and
- * prescriptions, assembled in MedicalRecordService.
- */
 @Document(collection = "medical_records")
 @Data
 @NoArgsConstructor

@@ -1,6 +1,7 @@
 package org.example.healthcare.controller;
 
 import org.example.healthcare.dto.request.PrescriptionRequest;
+import org.example.healthcare.dto.response.MessageResponse;
 import org.example.healthcare.dto.response.PrescriptionResponse;
 import org.example.healthcare.service.PrescriptionService;
 import jakarta.validation.Valid;
@@ -56,5 +57,13 @@ public class PrescriptionController {
             @PathVariable String id,
             @Valid @RequestBody PrescriptionRequest request) {
         return ResponseEntity.ok(prescriptionService.updatePrescription(id, request));
+    }
+
+    // ==================== DELETE (Doctor) ====================
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<MessageResponse> deletePrescription(@PathVariable String id) {
+        prescriptionService.deletePrescription(id);
+        return ResponseEntity.ok(MessageResponse.builder().message("Prescription deleted successfully").build());
     }
 }

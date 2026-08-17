@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-/** A single dated entry in a patient's history. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

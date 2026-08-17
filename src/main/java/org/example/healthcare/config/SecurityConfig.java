@@ -115,6 +115,7 @@ public class SecurityConfig {
                         // ── PRESCRIPTIONS: write = doctor, read = doctor+patient
                         .requestMatchers(HttpMethod.POST, PRESCRIPTIONS_API).hasAuthority(DOCTOR)
                         .requestMatchers(HttpMethod.PUT, PRESCRIPTIONS_API).hasAuthority(DOCTOR)
+                        .requestMatchers(HttpMethod.DELETE, PRESCRIPTIONS_API).hasAuthority(DOCTOR)
                         .requestMatchers(HttpMethod.GET, PRESCRIPTIONS_API).hasAnyAuthority(DOCTOR, PATIENT)
 
                         // ── MEDICAL RECORDS: write = doctor, read = doctor+patient

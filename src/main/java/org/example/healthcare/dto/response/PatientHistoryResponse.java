@@ -7,10 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * A patient's medical record: everything on file for them, newest first.
- * Assembled from the entries doctors have written plus their appointments and prescriptions.
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -12,12 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-/**
- * Endpoint authorization only proves the caller holds a role, not that the record is theirs.
- * Without these checks a patient could read another patient's data, or a doctor could act on
- * an appointment belonging to a colleague, just by changing an id in the URL.
- * Admins pass every check.
- */
 @Component
 @RequiredArgsConstructor
 public class CallerGuard {
@@ -27,7 +21,6 @@ public class CallerGuard {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
 
-    /** Patient-scoped data. Doctors and admins are clinical staff and may read it. */
     public void assertPatientOwns(Long patientId) {
         User user = currentUser();
         if (user.getRole() != Role.PATIENT) {
@@ -38,7 +31,6 @@ public class CallerGuard {
         }
     }
 
-    /** Doctor-scoped data. Patients have no business reading a doctor's whole book. */
     public void assertDoctorOwns(Long doctorId) {
         User user = currentUser();
         if (user.getRole() == Role.ADMIN) {
@@ -49,7 +41,6 @@ public class CallerGuard {
         }
     }
 
-    /** A record tied to one appointment: only its patient, its doctor, or an admin. */
     public void assertParticipant(Long patientId, Long doctorId) {
         User user = currentUser();
         switch (user.getRole()) {
@@ -67,7 +58,6 @@ public class CallerGuard {
         }
     }
 
-    /** The doctor making the request, for stamping authorship on what they create. */
     public Long currentDoctorId() {
         return callerDoctorId(currentUser());
     }
