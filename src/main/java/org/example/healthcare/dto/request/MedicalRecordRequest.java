@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,6 +17,8 @@ public class MedicalRecordRequest {
 
     @NotNull(message = "Patient ID is required")
     private Long patientId;
+
+    private LocalDate recordDate;
 
     @NotBlank(message = "Title is required")
     private String title;

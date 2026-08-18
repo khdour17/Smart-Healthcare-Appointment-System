@@ -54,7 +54,7 @@ public class MedicalRecordService {
                 .patientName(patient.getName())
                 .doctorId(author.getId())
                 .doctorName(author.getName())
-                .recordDate(LocalDate.now())
+                .recordDate(resolveRecordDate(request.getRecordDate()))
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .build();
@@ -108,6 +108,7 @@ public class MedicalRecordService {
         MedicalRecord record = findRecordOrThrow(id);
         callerGuard.assertDoctorOwns(record.getDoctorId());
 
+        record.setRecordDate(resolveRecordDate(request.getRecordDate()));
         record.setTitle(request.getTitle());
         record.setDescription(request.getDescription());
 
@@ -133,6 +134,16 @@ public class MedicalRecordService {
     }
 
     // ==================== HELPERS ====================
+
+    private LocalDate resolveRecordDate(LocalDate requested) {
+        if (requested == null) {
+            return LocalDate.now();
+        }
+        if (requested.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("A record entry cannot be dated in the future");
+        }
+        return requested;
+    }
 
     private MedicalRecord findRecordOrThrow(String id) {
         try {
