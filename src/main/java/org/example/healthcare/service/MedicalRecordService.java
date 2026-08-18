@@ -68,6 +68,7 @@ public class MedicalRecordService {
 
     // ==================== GET ====================
 
+    @Transactional(readOnly = true)
     public PatientHistoryResponse getPatientHistory(Long patientId) {
         callerGuard.assertPatientOwns(patientId);
         Patient patient = findPatientOrThrow(patientId);
