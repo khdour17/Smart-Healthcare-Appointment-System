@@ -31,4 +31,10 @@ public class AdminController {
         adminService.resetDatabase();
         return ResponseEntity.ok(Map.of("message", "Database reset successfully. Admin account preserved."));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteAdmin(@PathVariable Long id) {
+        adminService.deleteAdmin(id);
+        return ResponseEntity.ok(Map.of("message", "Admin deleted successfully"));
+    }
 }

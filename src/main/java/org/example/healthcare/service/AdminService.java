@@ -2,12 +2,16 @@ package org.example.healthcare.service;
 
 import org.example.healthcare.dto.response.AdminResponse;
 import org.example.healthcare.exception.DatabaseOperationException;
+import org.example.healthcare.exception.ForbiddenOperationException;
 import org.example.healthcare.exception.ResourceNotFoundException;
 import org.example.healthcare.mapper.AdminMapper;
 import org.example.healthcare.models.enums.Role;
+import org.example.healthcare.models.sql.Admin;
+import org.example.healthcare.models.sql.User;
 import org.example.healthcare.repository.nosql.MedicalRecordRepository;
 import org.example.healthcare.repository.nosql.PrescriptionRepository;
 import org.example.healthcare.repository.sql.*;
+import org.example.healthcare.security.CallerGuard;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +37,7 @@ public class AdminService {
     private final MedicalRecordRepository medicalRecordRepository;
     private final AdminRepository adminRepository;
     private final AdminMapper adminMapper;
+    private final CallerGuard callerGuard;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -59,6 +64,32 @@ public class AdminService {
                     .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + id));
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to fetch admin with id: " + id, ex);
+        }
+    }
+
+    @Transactional
+    public void deleteAdmin(Long id) {
+        Admin admin = adminRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + id));
+        User user = admin.getUser();
+
+        if (user != null && user.getId().equals(callerGuard.currentUserId())) {
+            throw new ForbiddenOperationException("You can not delete your own admin account");
+        }
+
+        if (adminRepository.count() <= 1) {
+            throw new ForbiddenOperationException("The last admin account can not be deleted");
+        }
+
+        try {
+            adminRepository.delete(admin);
+            // Flush so the admin row is gone before its users row is removed (FK: admins.user_id -> users.id)
+            adminRepository.flush();
+            if (user != null) {
+                userRepository.delete(user);
+            }
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to delete admin with id: " + id, ex);
         }
     }
 

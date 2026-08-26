@@ -62,6 +62,10 @@ public class CallerGuard {
         return callerDoctorId(currentUser());
     }
 
+    public Long currentUserId() {
+        return currentUser().getId();
+    }
+
     private User currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
