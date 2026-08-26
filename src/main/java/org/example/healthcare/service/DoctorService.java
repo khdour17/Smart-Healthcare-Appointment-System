@@ -13,9 +13,6 @@ import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +33,7 @@ public class DoctorService {
 
     // ==================== GET ====================
 
-    @Cacheable(value = "allDoctors")
-    @LogDoctor(action = "GET_ALL", cacheAction = "MISS")
+    @LogDoctor(action = "GET_ALL")
     public List<DoctorResponse> getAllDoctors() {
         try {
             return doctorRepository.findAll().stream()
@@ -48,14 +44,12 @@ public class DoctorService {
         }
     }
 
-    @Cacheable(value = "doctorById", key = "#id")
-    @LogDoctor(action = "GET_BY_ID", cacheAction = "MISS")
+    @LogDoctor(action = "GET_BY_ID")
     public DoctorResponse getDoctorById(Long id) {
         return doctorMapper.toResponse(findDoctorOrThrow(id));
     }
 
-    @Cacheable(value = "doctorsBySpecialty", key = "#specialty.toLowerCase()")
-    @LogDoctor(action = "GET_BY_SPECIALTY", cacheAction = "MISS")
+    @LogDoctor(action = "GET_BY_SPECIALTY")
     public List<DoctorResponse> getDoctorsBySpecialty(String specialty) {
         try {
             return doctorRepository.findBySpecialtyContainingIgnoreCase(specialty).stream()
@@ -66,15 +60,10 @@ public class DoctorService {
         }
     }
 
-    // ==================== UPDATE (evicts cache) ====================
+    // ==================== UPDATE ====================
 
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "allDoctors", allEntries = true),
-            @CacheEvict(value = "doctorById", key = "#id"),
-            @CacheEvict(value = "doctorsBySpecialty", allEntries = true)
-    })
-    @LogDoctor(action = "UPDATE", cacheAction = "EVICT")
+    @LogDoctor(action = "UPDATE")
     public DoctorResponse updateDoctor(Long id, DoctorRequest request) {
         Doctor doctor = findDoctorOrThrow(id);
         doctor.setName(request.getName());
@@ -86,15 +75,10 @@ public class DoctorService {
         }
     }
 
-    // ==================== DELETE (evicts cache) ====================
+    // ==================== DELETE ====================
 
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "allDoctors", allEntries = true),
-            @CacheEvict(value = "doctorById", key = "#id"),
-            @CacheEvict(value = "doctorsBySpecialty", allEntries = true)
-    })
-    @LogDoctor(action = "DELETE", cacheAction = "EVICT")
+    @LogDoctor(action = "DELETE")
     public void deleteDoctor(Long id) {
         Doctor doctor = findDoctorOrThrow(id);
         User user = doctor.getUser();
@@ -112,15 +96,10 @@ public class DoctorService {
         }
     }
 
-    // ==================== DELETE (bulk, evicts cache) ====================
+    // ==================== DELETE (bulk) ====================
 
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(value = "allDoctors", allEntries = true),
-            @CacheEvict(value = "doctorById", allEntries = true),
-            @CacheEvict(value = "doctorsBySpecialty", allEntries = true)
-    })
-    @LogDoctor(action = "DELETE_BULK", cacheAction = "EVICT")
+    @LogDoctor(action = "DELETE_BULK")
     public void deleteDoctors(List<Long> ids) {
         try {
             List<Doctor> doctorsToDelete = doctorRepository.findAllById(ids);

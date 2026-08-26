@@ -33,41 +33,6 @@
     </cache>
 
     <!--
-        SPRING CACHE: getDoctorsBySpecialty() results
-        Key = specialty name (e.g., "cardiologist")
-        Value = List<DoctorResponse>
-    -->
-    <cache alias="doctorsBySpecialty" uses-template="default">
-        <resources>
-            <heap>50</heap>                 <!-- Up to 50 different specialty searches -->
-        </resources>
-    </cache>
-
-    <!--
-        SPRING CACHE: getAllDoctors() result
-        Only 1 entry because there's only one "all doctors" list
-    -->
-    <cache alias="allDoctors" uses-template="default">
-        <expiry>
-            <ttl unit="minutes">15</ttl>   <!-- Refresh every 15 min -->
-        </expiry>
-        <resources>
-            <heap>1</heap>                  <!-- Only 1 entry (the full list) -->
-        </resources>
-    </cache>
-
-    <!--
-        SPRING CACHE: getDoctorById() results
-        Key = doctor ID
-        Value = DoctorResponse
-    -->
-    <cache alias="doctorById" uses-template="default">
-        <resources>
-            <heap>200</heap>                <!-- Up to 200 individual doctors -->
-        </resources>
-    </cache>
-
-    <!--
         HIBERNATE INTERNAL: tracks when entities were last modified
         Used to know if query cache results are still valid
         Must NEVER expire (otherwise Hibernate breaks)
