@@ -37,4 +37,10 @@ public class AdminController {
         adminService.deleteAdmin(id);
         return ResponseEntity.ok(Map.of("message", "Admin deleted successfully"));
     }
+
+    @DeleteMapping
+    public ResponseEntity<Map<String, String>> deleteAdmins(@RequestBody List<Long> ids) {
+        adminService.deleteAdmins(ids);
+        return ResponseEntity.ok(Map.of("message", "Admins deleted successfully"));
+    }
 }

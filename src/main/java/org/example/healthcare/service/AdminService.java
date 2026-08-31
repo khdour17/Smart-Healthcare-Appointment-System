@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,6 +91,36 @@ public class AdminService {
             }
         } catch (DataAccessException ex) {
             throw new DatabaseOperationException("Failed to delete admin with id: " + id, ex);
+        }
+    }
+
+    @Transactional
+    public void deleteAdmins(List<Long> ids) {
+        List<Admin> adminsToDelete = adminRepository.findAllById(ids);
+        if (adminsToDelete.size() != ids.size()) {
+            throw new ResourceNotFoundException("One or more admins not found for the given ids");
+        }
+
+        List<User> usersToDelete = adminsToDelete.stream()
+                .map(Admin::getUser)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (usersToDelete.stream().anyMatch(user -> user.getId().equals(callerGuard.currentUserId()))) {
+            throw new ForbiddenOperationException("You can not delete your own admin account");
+        }
+
+        if (adminRepository.count() - adminsToDelete.size() < 1) {
+            throw new ForbiddenOperationException("The last admin account can not be deleted");
+        }
+
+        try {
+            adminRepository.deleteAll(adminsToDelete);
+            // Flush so the admin rows are gone before their users rows are removed (FK: admins.user_id -> users.id)
+            adminRepository.flush();
+            userRepository.deleteAll(usersToDelete);
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to delete admins with ids: " + ids, ex);
         }
     }
 
