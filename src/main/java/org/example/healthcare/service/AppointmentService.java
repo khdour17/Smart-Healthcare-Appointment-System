@@ -202,6 +202,17 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
+    public List<AppointmentResponse> getAllAppointments() {
+        try {
+            return appointmentRepository.findAll().stream()
+                    .map(appointmentMapper::toResponse)
+                    .collect(Collectors.toList());
+        } catch (DataAccessException ex) {
+            throw new DatabaseOperationException("Failed to fetch all appointments", ex);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public List<AppointmentResponse> getPatientAppointments(Long patientId) {
         callerGuard.assertPatientOwns(patientId);
         try {

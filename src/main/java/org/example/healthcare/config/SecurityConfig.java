@@ -39,6 +39,7 @@ public class SecurityConfig {
     private static final String PATIENT_SEARCH  = "/api/patients/search";
     private static final String AVAILABILITY_API = "/api/availability/**";
     private static final String APPOINTMENTS_API = "/api/appointments/**";
+    private static final String APPOINTMENTS_ALL = "/api/appointments";
     private static final String PRESCRIPTIONS_API = "/api/prescriptions/**";
     private static final String MEDICAL_RECORDS_API = "/api/medical-records/**";
 
@@ -112,6 +113,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, APPOINTMENT_BOOK).hasAuthority(PATIENT)
                         .requestMatchers(HttpMethod.PATCH, APPOINTMENT_CANCEL).hasAuthority(PATIENT)
                         .requestMatchers(HttpMethod.DELETE, APPOINTMENTS_API).hasAnyAuthority(PATIENT, ADMIN)
+                        .requestMatchers(HttpMethod.GET, APPOINTMENTS_ALL).hasAuthority(ADMIN)
                         .requestMatchers(HttpMethod.GET, APPOINTMENTS_API).authenticated()
 
                         // ── PRESCRIPTIONS: write = doctor, read = doctor+patient

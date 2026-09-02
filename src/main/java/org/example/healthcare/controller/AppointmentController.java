@@ -43,6 +43,11 @@ public class AppointmentController {
 
     // ==================== GET ====================
 
+    @GetMapping
+    public ResponseEntity<List<AppointmentResponse>> getAllAppointments() {
+        return ResponseEntity.ok(appointmentService.getAllAppointments());
+    }
+
     @GetMapping("/search")
     public ResponseEntity<AppointmentResponse> getAppointmentById(@RequestParam Long id) {
         return ResponseEntity.ok(appointmentService.getAppointmentById(id));
