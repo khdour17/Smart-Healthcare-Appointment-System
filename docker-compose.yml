@@ -6,6 +6,7 @@ services:
     container_name: healthcare-mysql
     restart: unless-stopped
     environment:
+      TZ: ${TZ:-Asia/Amman}              # The clinic timezone, so dates match the users
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: healthcare_db
     ports:
@@ -26,6 +27,8 @@ services:
     image: mongo:7.0
     container_name: healthcare-mongodb
     restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Amman}              # The clinic timezone, so dates match the users
     ports:
       - "27018:27017"
     volumes:
@@ -82,6 +85,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      TZ: ${TZ:-Asia/Amman}              # The clinic timezone, so today means today for the users
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/healthcare_db?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 1234
