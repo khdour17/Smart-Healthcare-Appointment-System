@@ -9,6 +9,7 @@ import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.UserRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.example.healthcare.service.DoctorService;
 
 import java.util.List;
@@ -32,11 +33,12 @@ public class DoctorServiceTestHelper {
                                    DoctorAvailabilityRepository doctorAvailabilityRepository,
                                    AppointmentRepository appointmentRepository,
                                    UserRepository userRepository,
+                                   CallerGuard callerGuard,
                                    DoctorMapper doctorMapper) {
         this.doctorRepository = doctorRepository;
         this.doctorAvailabilityRepository = doctorAvailabilityRepository;
         this.userRepository = userRepository;
-        this.doctorService = new DoctorService(doctorRepository, doctorAvailabilityRepository, appointmentRepository, userRepository, doctorMapper);
+        this.doctorService = new DoctorService(doctorRepository, doctorAvailabilityRepository, appointmentRepository, userRepository, doctorMapper, callerGuard);
     }
 
     // ── GET ALL ───────────────────────────────────────────────

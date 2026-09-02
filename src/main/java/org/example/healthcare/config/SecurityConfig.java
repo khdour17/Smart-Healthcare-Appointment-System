@@ -36,6 +36,7 @@ public class SecurityConfig {
     private static final String ADMIN_API       = "/api/admin/**";
     private static final String DOCTORS_API     = "/api/doctors/**";
     private static final String PATIENTS_API    = "/api/patients/**";
+    private static final String PATIENT_SEARCH  = "/api/patients/search";
     private static final String AVAILABILITY_API = "/api/availability/**";
     private static final String APPOINTMENTS_API = "/api/appointments/**";
     private static final String PRESCRIPTIONS_API = "/api/prescriptions/**";
@@ -90,12 +91,13 @@ public class SecurityConfig {
                         .requestMatchers(AUTH + "/register/**").hasAuthority(ADMIN)
                         .requestMatchers(ADMIN_API).hasAuthority(ADMIN)
 
-                        // ── DOCTORS: view = all, modify = admin ────────────
+                        // ── DOCTORS: view = all, update = admin+doctor own, delete = admin
                         .requestMatchers(HttpMethod.GET, DOCTORS_API).authenticated()
-                        .requestMatchers(HttpMethod.PUT, DOCTORS_API).hasAuthority(ADMIN)
+                        .requestMatchers(HttpMethod.PUT, DOCTORS_API).hasAnyAuthority(ADMIN, DOCTOR)
                         .requestMatchers(HttpMethod.DELETE, DOCTORS_API).hasAuthority(ADMIN)
 
-                        // ── PATIENTS: view = admin+doctor, update = admin+patient, delete = admin
+                        // ── PATIENTS: list = admin+doctor, own record = patient too, delete = admin
+                        .requestMatchers(HttpMethod.GET, PATIENT_SEARCH).hasAnyAuthority(ADMIN, DOCTOR, PATIENT)
                         .requestMatchers(HttpMethod.GET, PATIENTS_API).hasAnyAuthority(ADMIN, DOCTOR)
                         .requestMatchers(HttpMethod.PUT, PATIENTS_API).hasAnyAuthority(ADMIN, PATIENT)
                         .requestMatchers(HttpMethod.DELETE, PATIENTS_API).hasAuthority(ADMIN)

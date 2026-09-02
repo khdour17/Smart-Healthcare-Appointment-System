@@ -44,6 +44,8 @@ public class PatientService {
 
     public PatientResponse getPatientById(Long id) {
         Patient patient = findPatientOrThrow(id);
+        callerGuard.assertPatientOwns(id);
+
         return patientMapper.toResponse(patient);
     }
 

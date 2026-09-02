@@ -6,6 +6,7 @@ import org.example.healthcare.repository.sql.AppointmentRepository;
 import org.example.healthcare.repository.sql.DoctorAvailabilityRepository;
 import org.example.healthcare.repository.sql.DoctorRepository;
 import org.example.healthcare.repository.sql.UserRepository;
+import org.example.healthcare.security.CallerGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,12 +29,15 @@ class DoctorServiceTest {
     @Mock // deleteDoctor(s) clears the doctor's appointments first
     private AppointmentRepository appointmentRepository;
 
+    @Mock // Ownership checks — a doctor may only update his own profile
+    private CallerGuard callerGuard;
+
     private DoctorServiceTestHelper helper;
 
     @BeforeEach
     void setUp() {
         // Real mapper (no logic to mock), fake repository
-        helper = new DoctorServiceTestHelper(doctorRepository, doctorAvailabilityRepository, appointmentRepository, userRepository, new DoctorMapper());
+        helper = new DoctorServiceTestHelper(doctorRepository, doctorAvailabilityRepository, appointmentRepository, userRepository, callerGuard, new DoctorMapper());
     }
 
     @Test
