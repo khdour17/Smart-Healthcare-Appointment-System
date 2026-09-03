@@ -10,6 +10,8 @@
 
 A full-featured **Spring Boot 4** healthcare system for managing patients, doctors, appointments, prescriptions, and medical records — with **JWT authentication**, **role-based authorization**, **dual database architecture** (MySQL + MongoDB), **AOP logging**, **Hibernate caching**, and comprehensive **unit testing**.
 
+**Web client:** [smart-healthcare-frontend](https://github.com/khdour17/smart-healthcare-frontend) — React 19, TypeScript, MUI, 78 Playwright end-to-end tests.
+
 </div>
 
 ---
@@ -29,6 +31,7 @@ A full-featured **Spring Boot 4** healthcare system for managing patients, docto
 - [AOP Logging](#-aop-logging)
 - [Exception Handling](#-exception-handling)
 - [Testing Strategy](#-testing-strategy)
+- [Frontend](#-frontend)
 - [Setup & Installation](#-setup--installation)
 - [Running the Application](#-running-the-application)
 - [Postman Collection](#-postman-collection)
@@ -429,6 +432,8 @@ Smart-Healthcare-Appointment-System/
 |--------|----------|-------------|--------|
 | `GET` | `/api/admin` | List all admins | Admin |
 | `GET` | `/api/admin/search?id=1` | Get admin by ID | Admin |
+| `DELETE` | `/api/admin/{id}` | Delete one admin (never yourself) | Admin |
+| `DELETE` | `/api/admin` | Delete several admins (`List<Long>` body) | Admin |
 | `DELETE` | `/api/admin/reset` | Reset database (keeps admin) | Admin |
 
 ### Doctors
@@ -438,8 +443,9 @@ Smart-Healthcare-Appointment-System/
 | `GET` | `/api/doctors` | List all doctors | All authenticated |
 | `GET` | `/api/doctors/search?id=1` | Get doctor by ID | All authenticated |
 | `GET` | `/api/doctors/specialty?specialty=Cardiology` | Search by specialty | All authenticated |
-| `PUT` | `/api/doctors/{id}` | Update doctor | Admin |
+| `PUT` | `/api/doctors/{id}` | Update doctor | Admin, the doctor himself |
 | `DELETE` | `/api/doctors/{id}` | Delete doctor | Admin |
+| `DELETE` | `/api/doctors` | Delete several doctors (`List<Long>` body) | Admin |
 
 ### Patients
 
@@ -447,8 +453,9 @@ Smart-Healthcare-Appointment-System/
 |--------|----------|-------------|--------|
 | `GET` | `/api/patients` | List all patients | Admin, Doctor |
 | `GET` | `/api/patients/search?id=1` | Get patient by ID | Admin, Doctor |
-| `PUT` | `/api/patients/{id}` | Update patient | Admin, Patient |
-| `DELETE` | `/api/patients/{id}` | Delete patient | Admin |
+| `PUT` | `/api/patients/{id}` | Update patient | Admin, the patient himself |
+| `DELETE` | `/api/patients/{id}` | Delete patient, with his appointments | Admin |
+| `DELETE` | `/api/patients` | Delete several patients (`List<Long>` body) | Admin |
 
 ### Doctor Availability
 
@@ -463,12 +470,14 @@ Smart-Healthcare-Appointment-System/
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
 | `POST` | `/api/appointments/patient/{patientId}` | Book appointment | Patient |
+| `GET` | `/api/appointments` | Every appointment in the clinic | Admin |
 | `GET` | `/api/appointments/search?id=1` | Get appointment by ID | All authenticated |
 | `GET` | `/api/appointments/patient/{patientId}` | Get patient appointments | All authenticated |
 | `GET` | `/api/appointments/doctor/{doctorId}` | Get doctor appointments | All authenticated |
 | `GET` | `/api/appointments/available-slots?doctorId=1&date=2026-02-18` | Get available time slots | All authenticated |
 | `PATCH` | `/api/appointments/{id}/complete?notes=...` | Mark as completed | Doctor |
 | `PATCH` | `/api/appointments/{id}/cancel` | Cancel appointment | Patient |
+| `DELETE` | `/api/appointments/{id}` | Delete a cancelled appointment | Patient, Admin |
 
 ### Prescriptions (MongoDB)
 
@@ -480,6 +489,7 @@ Smart-Healthcare-Appointment-System/
 | `GET` | `/api/prescriptions/patient/{patientId}` | Get patient's prescriptions | Doctor, Patient |
 | `GET` | `/api/prescriptions/doctor/{doctorId}` | Get doctor's prescriptions | Doctor, Patient |
 | `PUT` | `/api/prescriptions/{id}` | Update prescription | Doctor |
+| `DELETE` | `/api/prescriptions/{id}` | Delete prescription | Doctor |
 
 ### Medical Records (MongoDB)
 
@@ -487,7 +497,7 @@ Smart-Healthcare-Appointment-System/
 |--------|----------|-------------|--------|
 | `POST` | `/api/medical-records` | Create record | Doctor |
 | `GET` | `/api/medical-records/search?id=abc123` | Get by ID | Doctor, Patient |
-| `GET` | `/api/medical-records/patient/{patientId}` | Get patient's records | Doctor, Patient |
+| `GET` | `/api/medical-records/patient/{patientId}` | Full patient history — entries, appointments and prescriptions in one response | Doctor, the patient himself |
 | `PUT` | `/api/medical-records/{id}` | Update record | Doctor |
 | `DELETE` | `/api/medical-records/{id}` | Delete record | Doctor |
 
@@ -501,10 +511,10 @@ Smart-Healthcare-Appointment-System/
 | `/api/auth/register/**` | POST | ✅ | ❌ 403 | ❌ 403 | ❌ 401 |
 | `/api/admin/reset` | DELETE | ✅ | ❌ 403 | ❌ 403 | ❌ 401 |
 | `/api/doctors` | GET | ✅ | ✅ | ✅ | ❌ 401 |
-| `/api/doctors/{id}` | PUT | ✅ | ❌ 403 | ❌ 403 | ❌ 401 |
+| `/api/doctors/{id}` | PUT | ✅ | ✅ own only | ❌ 403 | ❌ 401 |
 | `/api/doctors/{id}` | DELETE | ✅ | ❌ 403 | ❌ 403 | ❌ 401 |
 | `/api/patients` | GET | ✅ | ✅ | ❌ 403 | ❌ 401 |
-| `/api/patients/{id}` | PUT | ✅ | ❌ 403 | ✅ | ❌ 401 |
+| `/api/patients/{id}` | PUT | ✅ | ❌ 403 | ✅ own only | ❌ 401 |
 | `/api/patients/{id}` | DELETE | ✅ | ❌ 403 | ❌ 403 | ❌ 401 |
 | `/api/availability/**` | POST | ❌ 403 | ✅ | ❌ 403 | ❌ 401 |
 | `/api/availability/**` | GET | ✅ | ✅ | ✅ | ❌ 401 |
@@ -512,10 +522,12 @@ Smart-Healthcare-Appointment-System/
 | `/api/appointments/**/complete` | PATCH | ❌ 403 | ✅ | ❌ 403 | ❌ 401 |
 | `/api/appointments/**/cancel` | PATCH | ❌ 403 | ❌ 403 | ✅ | ❌ 401 |
 | `/api/appointments/**` | GET | ✅ | ✅ | ✅ | ❌ 401 |
+| `/api/appointments/{id}` | DELETE | ✅ | ❌ 403 | ✅ own only | ❌ 401 |
 | `/api/prescriptions` | POST | ❌ 403 | ✅ | ❌ 403 | ❌ 401 |
-| `/api/prescriptions/**` | GET | ❌ 403 | ✅ | ✅ | ❌ 401 |
+| `/api/prescriptions/**` | GET | ❌ 403 | ✅ | ✅ own only | ❌ 401 |
+| `/api/prescriptions/{id}` | DELETE | ❌ 403 | ✅ | ❌ 403 | ❌ 401 |
 | `/api/medical-records` | POST | ❌ 403 | ✅ | ❌ 403 | ❌ 401 |
-| `/api/medical-records/**` | GET | ❌ 403 | ✅ | ✅ | ❌ 401 |
+| `/api/medical-records/**` | GET | ❌ 403 | ✅ | ✅ own only | ❌ 401 |
 | `/api/medical-records/{id}` | DELETE | ❌ 403 | ✅ | ❌ 403 | ❌ 401 |
 
 ---
@@ -711,6 +723,50 @@ mvn test
 
 ---
 
+## 💻 Frontend
+
+The API is consumed by a React single-page app kept in its own repository:
+
+> **[smart-healthcare-frontend](https://github.com/khdour17/smart-healthcare-frontend)**
+
+| | |
+|---|---|
+| Stack | React 19 · TypeScript · Vite 8 · MUI v9 · SCSS Modules · React Router 7 |
+| Auth | Reads the JWT this API returns, stores it, and sends it as `Authorization: Bearer` |
+| Routing | Route guards read the role out of the token, so a user only reaches his own pages |
+| Screens | Admin, doctor and patient dashboards, appointment calendars, prescriptions, medical records |
+| Testing | 78 Playwright end-to-end tests against a running API, plus a screenshot script |
+| Serving | nginx in Docker, proxying `/api` to this application |
+
+### Running both together
+
+The backend stack must start first, because it creates the Docker network the frontend joins.
+
+```bash
+# 1. This repository — API, MySQL, MongoDB
+docker compose up -d --build
+
+# 2. The frontend repository — nginx serving the built app
+docker compose up -d --build web
+```
+
+| URL | What |
+|-----|------|
+| `http://localhost:5173` | The web app |
+| `http://localhost:8080/api` | This API |
+| `http://localhost:8090` | phpMyAdmin |
+| `http://localhost:8091` | mongo-express |
+
+### What the frontend needs from this API
+
+- `roleEntityId` on the login response, so the app knows which doctor or patient is signed in
+- `GET /api/appointments` for the admin dashboard totals
+- `GET /api/medical-records/patient/{patientId}` returning the full history in one call
+- Bulk `DELETE` endpoints, so a list screen can remove several rows at once
+- Ownership checks on every read, so the app never has to hide data the API would have returned
+
+---
+
 ## ⚙ Setup & Installation
 
 ### Prerequisites
@@ -778,18 +834,42 @@ mvn clean install
 docker compose up --build
 ```
 
-This starts **3 containers**:
+This starts the API next to its two databases and the two database viewers:
 
-|      Container      |         Image         | Port (Host → Container) |
-|---------------------|-----------------------|-------------------------|
-| `healthcare-mysql`  |       `mysql:8.0`     |      `3307 → 3306`      |
-| `healthcare-mongodb`|       `mongo:7.0`     |      `27018 → 27017`    |
-|   `healthcare-app`  | Built from Dockerfile |      `8080 → 8080`      |
+|        Container         |         Image         | Port (Host → Container) |
+|--------------------------|-----------------------|-------------------------|
+| `healthcare-mysql`       |       `mysql:8.0`     |      `3307 → 3306`      |
+| `healthcare-mongodb`     |       `mongo:7.0`     |      `27018 → 27017`    |
+| `healthcare-app`         | Built from Dockerfile |      `8080 → 8080`      |
+| `healthcare-phpmyadmin`  |    `phpmyadmin:5.2`   |       `8090 → 80`       |
+| `healthcare-mongo-express`| `mongo-express:1.0`  |      `8091 → 8081`      |
+
+### Timezone
+
+The app, MySQL and MongoDB all run in the clinic timezone, which defaults to `Asia/Amman`:
+
+```yaml
+environment:
+  TZ: ${TZ:-Asia/Amman}
+```
+
+Without it the containers run in UTC while the users do not, and a record entry dated today
+by someone in `UTC+3` is rejected as being in the future for the first three hours of the day.
+Override it for another clinic:
+
+```bash
+TZ=Europe/Berlin docker compose up -d --build
+```
 
 ### Access
 - **API**: `http://localhost:8080/api`
 - **MySQL**: `localhost:3307` (user: `root`, password: `1234`)
 - **MongoDB**: `localhost:27018`
+- **phpMyAdmin**: `http://localhost:8090`
+- **mongo-express**: `http://localhost:8091`
+
+The [frontend](https://github.com/khdour17/smart-healthcare-frontend) joins this stack's network and is reachable on
+`http://localhost:5173` once its own compose file is up.
 
 ### Stop
 
@@ -888,5 +968,7 @@ The repository includes a ready-to-use Postman collection: `Smart-Healthcare-Pos
 <div align="center">
 
 **Built with ❤️ using Spring Boot**
+
+Web client: **[smart-healthcare-frontend](https://github.com/khdour17/smart-healthcare-frontend)**
 
 </div>
